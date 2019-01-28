@@ -1,9 +1,9 @@
-function [] = serialComs(model, t)
+function [] = serialComs(model, t, COMPORT)
     
     try
         % Establish a connection to Arduino
         fclose('all');
-        s = serial('COM6');
+        s = serial(COMPORT);
         set(s,'BaudRate',115200);
         fopen(s);
         fprintf("Connection established\n")

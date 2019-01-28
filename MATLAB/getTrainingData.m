@@ -1,7 +1,7 @@
-function [data] = getTrainingData(n, classnum, trainnum)
+function [data] = getTrainingData(n, classnum, trainnum, COMPORT)
     try
         fclose('all');
-        s = serial ('COM6');
+        s = serial (COMPORT);
         set(s,'BaudRate',115200);
         fopen(s);
         pause(3);
