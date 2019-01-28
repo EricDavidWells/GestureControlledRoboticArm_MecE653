@@ -1,5 +1,6 @@
-data = getTrainingData(100, 4, 1);
-model = generateSVM(data);
+clear all; close all; clc;
+data = getTrainingData(250, 4, 3); fprintf("\nTraining Complete\n");
+fprintf("\Generating classifier...\n"); model = generateSVM(data);
 visualizeData(data);
-t = input("foo");
+t = input("Simulation time: ");
 serialComs(model, t);

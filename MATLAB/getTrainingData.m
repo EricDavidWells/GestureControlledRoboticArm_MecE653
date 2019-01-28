@@ -1,11 +1,11 @@
 function [data] = getTrainingData(n, classnum, trainnum)
     try
         fclose('all');
-        % s = serial ('/dev/cu.usbmodem14201');
         s = serial ('COM6');
         set(s,'BaudRate',115200);
         fopen(s);
         pause(3);
+        count = 1;
         
         data = zeros(n*classnum*trainnum, 10);
         for k=1:trainnum
@@ -20,8 +20,13 @@ function [data] = getTrainingData(n, classnum, trainnum)
                     split = strsplit(out, ',');
                     split = strrep(split, 'NaN', '0');
                     data(n *(i-1) + n*classnum*(k-1) + j, :) = str2double(split);
-                    disp(str2double(split))
+                    if (count > 40)
+                        fprintf(". ");
+                    end
+                    count = count + 1;
                 end
+                fprintf("\n")
+                count = 1;
             end
         end
         fclose(s);

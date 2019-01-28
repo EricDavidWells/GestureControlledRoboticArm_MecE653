@@ -67,7 +67,7 @@ void loop(){
   // Find pitch and roll from accelerometer
   accelPitch = atan2(accel_y, accel_z) * RAD_TO_DEG;
   accelRoll = atan2(accel_x, accel_z) * RAD_TO_DEG;
-
+ 
   // Move arm based on the arm being up or down
   if (accelPitch >= -80){
     Elbowpos = 1150;
@@ -109,6 +109,7 @@ void loop(){
     Handpos -= 1;
   }
 
+  if (label == "on\n"){
   Shoulderpos = constrain(Shoulderpos, 500, 2000);
   Elbowpos = constrain(Elbowpos, 500, 2000);
   Handpos = constrain(Handpos, 1000, 3000);
@@ -116,6 +117,7 @@ void loop(){
   Shoulder.writeMicroseconds(Shoulderpos);
   Elbow.writeMicroseconds(Elbowpos);
   Hand.writeMicroseconds(Handpos);
+  }
 
   // Read analog pins and convert to force
   while (dataCount > 0){
@@ -154,7 +156,6 @@ void loop(){
 
       dataCount -= 1;
   }
-
 }
 
 
