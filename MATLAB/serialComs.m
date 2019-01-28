@@ -8,6 +8,7 @@ function [] = serialComs(model, t, COMPORT)
         fopen(s);
         fprintf("Connection established\n")
         pause(3)
+        yPrev = 0;
         tic
 
         % Turn on servo's
@@ -30,12 +31,18 @@ function [] = serialComs(model, t, COMPORT)
             for i=1:window-1
                y(i) = y(i+1);
             end
+
             y(window) = model.predictFcn(force);
 
             fprintf(s, 's%i\n', mode(y));
             pause(0.01);
             fprintf("Time: %0.1f, Class: %0.0f\n",toc,mode(y))
-            stateVisualizer(mode(y));
+
+            if (yPrev ~= mode(y))
+              stateVisualizer(mode(y));
+            end
+            
+            yPrev = mode(y);
         end
 
         % Turn off servo's
@@ -97,7 +104,7 @@ function [] = stateVisualizer(state)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     subplot(2,2,2);
 
-    if state == 4
+    if state == 3
         rectangle('Position',pos,'Curvature',[1 1],'FaceColor',[0.4660, 0.6740, 0.1880])
     else
         rectangle('Position',pos,'Curvature',[1 1],'FaceColor',[0.25, 0.25, 0.25])

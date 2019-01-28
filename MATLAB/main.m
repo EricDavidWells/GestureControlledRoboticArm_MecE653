@@ -1,7 +1,7 @@
 clear all; close all; clc;
-COMPORT = "COM6";
+COMPORT = "/dev/cu.usbmodem14201"; %"COM6";
 
-data = getTrainingData(250, 8, 1, COMPORT); 
+data = getTrainingData(250, 4, 1, COMPORT); 
 fprintf("\nTraining Complete\n");
 fprintf("Generating classifier...\n");
 [model, accuracy] = generateSVM(data);

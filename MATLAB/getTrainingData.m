@@ -6,7 +6,7 @@ function [data] = getTrainingData(n, classnum, trainnum, COMPORT)
         fopen(s);
         pause(3);
         count = 1;
-        
+
         data = zeros(n*classnum*trainnum, 10);
         for k=1:trainnum
             input("training iteration: " + num2str(k))
@@ -20,7 +20,7 @@ function [data] = getTrainingData(n, classnum, trainnum, COMPORT)
                     split = strsplit(out, ',');
                     split = strrep(split, 'NaN', '0');
                     data(n *(i-1) + n*classnum*(k-1) + j, :) = str2double(split);
-                    if (count > 40)
+                    if (count > 100)
                         fprintf(". ");
                     end
                     count = count + 1;
