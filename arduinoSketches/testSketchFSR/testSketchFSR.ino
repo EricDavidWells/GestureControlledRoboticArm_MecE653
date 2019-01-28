@@ -1,21 +1,22 @@
 #include <Servo.h>
 #include <Wire.h>
 
-// Declare some variables
 Servo Shoulder;
 Servo Elbow;
 Servo Hand;
-
-int Shoulderpos = 1200;
-int Elbowpos = 1200;
-int Handpos = 3000;
 
 double accelPitch, accelRoll;
 long acc_x, acc_y, acc_z;
 long scaleFactor = 8192; // 2g --> 16384 , 4g --> 8192 , 8g --> 4096, 16g --> 2048
 double accel_x, accel_y, accel_z;
 
+int Shoulderpos = 1200;
+int Elbowpos = 1200;
+int Handpos = 3000;
+
+// Declare some variables
 const int FSR_PIN[] = {0, 1, 2, 3, 4, 5, 6, 7};
+
 const float VCC = 4.98;
 const float R_DIV = 5100.0;
 
@@ -31,17 +32,14 @@ int dataCount = 0;
 
 int y;
 
-
-
 void setup(){
   // Set up serial and pin mode
   Serial.begin(115200);
   Serial.setTimeout(3);
   for (int i=0;i<8;i++){
-    pinMode(FSR_PIN[i], INPUT);
+  pinMode(FSR_PIN[i], INPUT);
   }
 
-  // Place arm to initial position
   Shoulder.attach(5);
   Elbow.attach(4);
   Hand.attach(11);
@@ -50,8 +48,12 @@ void setup(){
   Elbow.writeMicroseconds(Elbowpos);
   Hand.writeMicroseconds(Handpos);
 
-  // Start the MPU 6050
   setup_mpu_6050_registers();
+//
+//  pinMode(14, OUTPUT);
+//  pinMode(15, OUTPUT);
+//  digitalWrite(14, LOW);
+//  digitalWrite(15, HIGH);
 }
 
 
@@ -67,8 +69,11 @@ void loop(){
   // Find pitch and roll from accelerometer
   accelPitch = atan2(accel_y, accel_z) * RAD_TO_DEG;
   accelRoll = atan2(accel_x, accel_z) * RAD_TO_DEG;
+//Serial.println(accelPitch);
 
-  // Move arm based on the arm being up or down
+  // Map servo value
+//  Elbowpos = map(accelPitch,0,-180,500,3000);
+
   if (accelPitch >= -80){
     Elbowpos = 1150;
   }
@@ -76,10 +81,9 @@ void loop(){
     Elbowpos = 2650;
   }
 
-  // Get user/MATLAB input through serial port
-  if (Serial.available() > 0) {
-    incomingString = Serial.readString();
-
+if (Serial.available() > 0) {
+                // read the incoming byte:
+  incomingString = Serial.readString();
     if (incomingString.toInt() > 20){
       dataCount = incomingString.toInt();
     }
@@ -95,19 +99,33 @@ void loop(){
     }
   }
 
-  // Move the servo(s) based on the classification
-  if (y == 1){
-    Shoulderpos += 1;
-  }
-  else if (y == 2){
-    Shoulderpos -= 1;
-  }
+   if (y == 1){
+     Shoulderpos += 1;
+   }
+   else if (y == 2){
+     Shoulderpos -= 1;
+   }
   if(y == 3){
     Handpos += 1;
   }
   else if(y == 0){
     Handpos -= 1;
+//    Elbowpos = 1200;
+//    Shoulderpos = 1200;
   }
+//  else if(y == 1){
+//    Elbowpos += 1;
+//  }
+//  else if (y == 2){
+//    Elbowpos -= 1;
+//  }
+
+//  Serial.print(Shoulderpos);
+//  Serial.print('\t');
+//  Serial.print(Elbowpos);
+//  Serial.print('\t');
+//  Serial.print(Handpos);
+//  Serial.print('\n');
 
   Shoulderpos = constrain(Shoulderpos, 500, 2000);
   Elbowpos = constrain(Elbowpos, 500, 2000);
@@ -117,44 +135,42 @@ void loop(){
   Elbow.writeMicroseconds(Elbowpos);
   Hand.writeMicroseconds(Handpos);
 
-  // Read analog pins and convert to force
-  while (dataCount > 0){
-    for (int i=0; i<8;i++){
+while (dataCount > 0){
+  for (int i=0; i<8;i++){
       // Read pin
-      fsrADC = analogRead(FSR_PIN[i]);
+    fsrADC = analogRead(FSR_PIN[i]);
 
-      // Use ADC reading to calculate voltage:
-      fsrV = fsrADC * VCC / 1023.0;
+    // Use ADC reading to calculate voltage:
+    fsrV = fsrADC * VCC / 1023.0;
 
-      // Use voltage and static resistor value to calculate FSR resistance:
-      fsrR = ((VCC - fsrV) * R_DIV) / fsrV;
+    // Use voltage and static resistor value to calculate FSR resistance:
+    fsrR = ((VCC - fsrV) * R_DIV) / fsrV;
 
-      // Guesstimate force based on slopes in figure 3 of FSR datasheet (conductance):
-      fsrG = 1.0 / fsrR;
+    // Guesstimate force based on slopes in figure 3 of FSR datasheet (conductance):
+    fsrG = 1.0 / fsrR;
 
-      // Break parabolic curve down into two linear slopes:
-      if (fsrR <= 600)
-        force[i] = (fsrG - 0.00075) / 0.00000032639;
-      else
-        force[i] =  fsrG / 0.000000642857;
+    // Break parabolic curve down into two linear slopes:
+    if (fsrR <= 600)
+      force[i] = (fsrG - 0.00075) / 0.00000032639;
+    else
+      force[i] =  fsrG / 0.000000642857;
     }
 
+float aveforce = 0;
   // Display data [in grams] and add small pause
-  float aveforce = 0;
-      for (int i=0; i<8; i++){
-          Serial.print(force[i],1);
-          Serial.print(',');
-          aveforce += force[i];
-        }
+    for (int i=0; i<8; i++){
+        Serial.print(force[i],1);
+        Serial.print(',');
+        aveforce += force[i];
+    }
+    aveforce = aveforce/8;
+    Serial.print(aveforce,1);
+    Serial.print(',');
+    Serial.print(label);
+//    Serial.println();
 
-      aveforce = aveforce/8;
-      Serial.print(aveforce,1);
-      Serial.print(',');
-      Serial.print(label);
-
-      dataCount -= 1;
-  }
-
+    dataCount -= 1;
+}
 }
 
 
