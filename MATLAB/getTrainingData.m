@@ -20,8 +20,9 @@ function [data] = getTrainingData(n, classnum, trainnum, COMPORT)
                     split = strsplit(out, ',');
                     split = strrep(split, 'NaN', '0');
                     data(n *(i-1) + n*classnum*(k-1) + j, :) = str2double(split);
-                    if (count > 100)
+                    if (count > 50)
                         fprintf(". ");
+                        count = 1;
                     end
                     count = count + 1;
                 end
