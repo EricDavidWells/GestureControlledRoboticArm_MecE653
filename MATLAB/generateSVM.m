@@ -1,18 +1,4 @@
-function [trainedClassifier] = generateSVM(fileName)
-% Input requires string with file extension. E.g - generateSVM('data.csv')
-
-  fileNamePath = strcat('../data/',fileName);
-  data = csvread(fileNamePath);
-
-  [trainedClassifier, validationAccuracy] = trainClassifier(data);
-
-end
-
-
-
-
-
-function [trainedClassifier, validationAccuracy] = trainClassifier(trainingData)
+function [trainedClassifier, validationAccuracy] = generateSVM(trainingData)
 % [trainedClassifier, validationAccuracy] = trainClassifier(trainingData)
 % returns a trained classifier and its accuracy. This code recreates the
 % classification model trained in Classification Learner app. Use the

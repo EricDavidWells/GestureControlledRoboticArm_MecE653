@@ -1,18 +1,18 @@
-function [g] = visualizeData(fileName)
+function [g] = visualizeData(data)
     close all
-    fileNamePath = strcat('../data/',fileName);
-    data = csvread(fileNamePath);
-    pcacoeff = pca(data, 'NumComponents', 3);
+%     fileNamePath = strcat('../data/',fileName);
+%     data = csvread(fileNamePath);
+    pcacoeff = pca(data(:,1:end-1), 'NumComponents', 3);
     
     y0 = data(:,end) == 0;
     y1 = data(:,end) == 1;
     y2 = data(:,end) == 2;
     y3 = data(:,end) == 3;
     
-    x0 = data(find(y0),:);
-    x1 = data(find(y1),:);
-    x2 = data(find(y2),:);
-    x3 = data(find(y3),:);
+    x0 = data(find(y0),1:end-1);
+    x1 = data(find(y1),1:end-1);
+    x2 = data(find(y2),1:end-1);
+    x3 = data(find(y3),1:end-1);
     
     pcax0 = x0 * pcacoeff;
     pcax1 = x1 * pcacoeff;
