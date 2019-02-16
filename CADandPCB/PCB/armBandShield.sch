@@ -5561,7 +5561,11 @@ Standard decoupling cap</description>
 <segment>
 <pinref part="MULTIPLEXER" gate="G$1" pin="VCC"/>
 <pinref part="P+3" gate="VCC" pin="VCC"/>
-<wire x1="73.66" y1="63.5" x2="101.6" y2="63.5" width="0.1524" layer="91"/>
+<wire x1="73.66" y1="63.5" x2="96.52" y2="63.5" width="0.1524" layer="91"/>
+<pinref part="C3" gate="G$1" pin="1"/>
+<wire x1="96.52" y1="63.5" x2="101.6" y2="63.5" width="0.1524" layer="91"/>
+<wire x1="96.52" y1="60.96" x2="96.52" y2="63.5" width="0.1524" layer="91"/>
+<junction x="96.52" y="63.5"/>
 </segment>
 <segment>
 <pinref part="BT_HEADERS" gate="G$1" pin="1"/>
@@ -5880,12 +5884,6 @@ Standard decoupling cap</description>
 <pinref part="MULTIPLEXER" gate="G$1" pin="!E!"/>
 <pinref part="R13" gate="G$1" pin="1"/>
 <wire x1="73.66" y1="45.72" x2="76.2" y2="45.72" width="0.1524" layer="91"/>
-</segment>
-</net>
-<net name="VCC_1" class="0">
-<segment>
-<pinref part="C3" gate="G$1" pin="1"/>
-<wire x1="96.52" y1="63.5" x2="96.52" y2="60.96" width="0.1524" layer="91"/>
 </segment>
 </net>
 </nets>
