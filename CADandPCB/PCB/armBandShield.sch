@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="9.3.1">
+<eagle version="9.3.0">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
@@ -6736,7 +6736,7 @@ Basic schematic elements and footprints for 0603, 1206, and PTH resistors.</desc
 </classes>
 <parts>
 <part name="RIGHT_HEADER" library="SparkFun-Connectors" deviceset="CONN_15" device=""/>
-<part name="MULTIPLEXER" library="SparkFun-IC-Logic" deviceset="74*4051" device="BQ" technology="HC" value="74HC4051"/>
+<part name="74HC4051" library="SparkFun-IC-Logic" deviceset="74*4051" device="BQ" technology="HC" value="U1"/>
 <part name="GND1" library="SparkFun-PowerSymbols" deviceset="GND" device=""/>
 <part name="P+1" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="VCC" device=""/>
 <part name="GND2" library="SparkFun-PowerSymbols" deviceset="GND" device=""/>
@@ -6777,8 +6777,8 @@ Basic schematic elements and footprints for 0603, 1206, and PTH resistors.</desc
 <part name="C3" library="SparkFun-Capacitors" deviceset="0.1UF-25V(+80/-20%)(0603)" device="" value="0.1uF"/>
 <part name="GND22" library="SparkFun-Aesthetics" deviceset="GND" device=""/>
 <part name="SWITCH_HEADERS" library="SparkFun-Connectors" deviceset="CONN_03" device="" value="455-1750-1-ND"/>
-<part name="IMU" library="Testing" deviceset="MPU-6050" device="-1"/>
-<part name="LLC1" library="SparkFun" deviceset="MOSFET-NCHANNEL" device="SMD" value="BSS138"/>
+<part name="U2" library="Testing" deviceset="MPU-6050" device="-1"/>
+<part name="Q1" library="SparkFun" deviceset="MOSFET-NCHANNEL" device="SMD" value="BSS138"/>
 <part name="R16" library="SparkFun" deviceset="RESISTOR" device="0603-RES" value="10K"/>
 <part name="R17" library="SparkFun" deviceset="RESISTOR" device="0603-RES" value="10K"/>
 <part name="SUPPLY2" library="SparkFun-PowerSymbols" deviceset="VCC_2" device=""/>
@@ -6797,7 +6797,7 @@ Basic schematic elements and footprints for 0603, 1206, and PTH resistors.</desc
 <part name="C7" library="SparkFun-Capacitors" deviceset="0.1UF-25V(+80/-20%)(0603)" device="" value="0.1uF"/>
 <part name="GND29" library="SparkFun-Aesthetics" deviceset="GND" device=""/>
 <part name="GND24" library="SparkFun-Aesthetics" deviceset="GND" device=""/>
-<part name="LLC2" library="SparkFun" deviceset="MOSFET-NCHANNEL" device="SMD" value="BSS138"/>
+<part name="Q2" library="SparkFun" deviceset="MOSFET-NCHANNEL" device="SMD" value="BSS138"/>
 <part name="R20" library="SparkFun" deviceset="RESISTOR" device="0603-RES" value="10K"/>
 <part name="R21" library="SparkFun" deviceset="RESISTOR" device="0603-RES" value="10K"/>
 <part name="SUPPLY8" library="SparkFun-PowerSymbols" deviceset="VCC_2" device=""/>
@@ -6830,9 +6830,9 @@ Therefore, voltage divider range varries between 0-3.4 V.
 <wire x1="248.92" y1="99.06" x2="441.96" y2="99.06" width="0.1524" layer="97" style="longdash"/>
 <wire x1="441.96" y1="99.06" x2="441.96" y2="0" width="0.1524" layer="97" style="longdash"/>
 <wire x1="441.96" y1="0" x2="248.92" y2="0" width="0.1524" layer="97" style="longdash"/>
-<text x="223.52" y="86.36" size="3.81" layer="97" font="vector" align="bottom-center">Pin and Header
+<text x="231.14" y="86.36" size="3.81" layer="97" font="vector" align="bottom-center">Pin and Header
 Assignment</text>
-<text x="388.62" y="86.36" size="3.81" layer="97" font="vector" align="bottom-center">6-DOF Inertial Measurement Unit (IMU) and
+<text x="391.16" y="86.36" size="3.81" layer="97" font="vector" align="bottom-center">6-DOF Inertial Measurement Unit (IMU) and
 Logic Level Conversion</text>
 <text x="114.3" y="-2.54" size="2.54" layer="97" font="vector" align="top-left">5. Shield for Arduino Nano V3 footprint.
 6. Bluetooth module is HC-05. RX pin on module only supports logic 3.3 V hence 
@@ -6887,9 +6887,9 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <attribute name="VALUE" x="149.86" y="33.274" size="1.778" layer="96" font="vector"/>
 <attribute name="NAME" x="149.86" y="76.708" size="1.778" layer="95" font="vector"/>
 </instance>
-<instance part="MULTIPLEXER" gate="G$1" x="66.04" y="45.72" smashed="yes" rot="MR0">
-<attribute name="NAME" x="73.66" y="61.214" size="1.778" layer="95" font="vector" rot="MR0"/>
-<attribute name="VALUE" x="66.04" y="32.766" size="1.778" layer="96" font="vector" rot="MR0" align="top-center"/>
+<instance part="74HC4051" gate="G$1" x="66.04" y="45.72" smashed="yes" rot="MR0">
+<attribute name="NAME" x="64.516" y="30.226" size="1.778" layer="95" font="vector" rot="MR0" align="bottom-center"/>
+<attribute name="VALUE" x="59.944" y="61.722" size="1.778" layer="96" font="vector" rot="MR0" align="bottom-center"/>
 </instance>
 <instance part="GND1" gate="1" x="170.18" y="68.58" smashed="yes">
 <attribute name="VALUE" x="170.18" y="68.326" size="1.778" layer="96" align="top-center"/>
@@ -7027,11 +7027,11 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <instance part="SWITCH_HEADERS" gate="J$1" x="220.98" y="10.16" smashed="yes" rot="R90">
 <attribute name="NAME" x="231.14" y="6.858" size="1.778" layer="95" font="vector" rot="R180"/>
 </instance>
-<instance part="IMU" gate="G$1" x="317.5" y="50.8" smashed="yes">
+<instance part="U2" gate="G$1" x="317.5" y="50.8" smashed="yes">
 <attribute name="NAME" x="304.8" y="60.96" size="1.778" layer="95"/>
 <attribute name="VALUE" x="304.8" y="38.1" size="1.778" layer="96"/>
 </instance>
-<instance part="LLC1" gate="G$1" x="411.48" y="53.34" smashed="yes" rot="R270">
+<instance part="Q1" gate="G$1" x="411.48" y="53.34" smashed="yes" rot="R270">
 <attribute name="NAME" x="407.67" y="58.166" size="1.778" layer="95"/>
 <attribute name="VALUE" x="406.146" y="47.752" size="1.778" layer="96"/>
 </instance>
@@ -7096,7 +7096,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <instance part="GND24" gate="1" x="269.24" y="48.26" smashed="yes">
 <attribute name="VALUE" x="266.7" y="45.72" size="1.778" layer="96"/>
 </instance>
-<instance part="LLC2" gate="G$1" x="411.48" y="10.16" smashed="yes" rot="R270">
+<instance part="Q2" gate="G$1" x="411.48" y="10.16" smashed="yes" rot="R270">
 <attribute name="NAME" x="407.67" y="14.986" size="1.778" layer="95"/>
 <attribute name="VALUE" x="406.146" y="4.572" size="1.778" layer="96"/>
 </instance>
@@ -7135,7 +7135,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <wire x1="160.02" y1="71.12" x2="170.18" y2="71.12" width="0.1524" layer="91"/>
 </segment>
 <segment>
-<pinref part="MULTIPLEXER" gate="G$1" pin="GND"/>
+<pinref part="74HC4051" gate="G$1" pin="GND"/>
 <pinref part="GND2" gate="1" pin="GND"/>
 <wire x1="76.2" y1="35.56" x2="78.74" y2="35.56" width="0.1524" layer="91"/>
 </segment>
@@ -7206,13 +7206,13 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <pinref part="GND17" gate="1" pin="GND"/>
 </segment>
 <segment>
-<pinref part="MULTIPLEXER" gate="G$1" pin="VEE"/>
+<pinref part="74HC4051" gate="G$1" pin="VEE"/>
 <wire x1="76.2" y1="55.88" x2="91.44" y2="55.88" width="0.1524" layer="91"/>
 <pinref part="GND20" gate="1" pin="GND"/>
 </segment>
 <segment>
 <pinref part="GND21" gate="1" pin="GND"/>
-<pinref part="MULTIPLEXER" gate="G$1" pin="!E!"/>
+<pinref part="74HC4051" gate="G$1" pin="!E!"/>
 <wire x1="76.2" y1="40.64" x2="86.36" y2="40.64" width="0.1524" layer="91"/>
 </segment>
 <segment>
@@ -7221,17 +7221,17 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <wire x1="99.06" y1="45.72" x2="99.06" y2="48.26" width="0.1524" layer="91"/>
 </segment>
 <segment>
-<pinref part="IMU" gate="G$1" pin="AD0"/>
+<pinref part="U2" gate="G$1" pin="AD0"/>
 <wire x1="335.28" y1="48.26" x2="368.3" y2="48.26" width="0.1524" layer="91"/>
 <pinref part="GND23" gate="1" pin="GND"/>
 </segment>
 <segment>
-<pinref part="IMU" gate="G$1" pin="CLKIN"/>
+<pinref part="U2" gate="G$1" pin="CLKIN"/>
 <wire x1="299.72" y1="50.8" x2="276.86" y2="50.8" width="0.1524" layer="91"/>
 <pinref part="GND25" gate="1" pin="GND"/>
 </segment>
 <segment>
-<pinref part="IMU" gate="G$1" pin="GND"/>
+<pinref part="U2" gate="G$1" pin="GND"/>
 <wire x1="299.72" y1="43.18" x2="299.72" y2="30.48" width="0.1524" layer="91"/>
 <pinref part="GND26" gate="1" pin="GND"/>
 </segment>
@@ -7251,7 +7251,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <wire x1="261.62" y1="40.64" x2="261.62" y2="45.72" width="0.1524" layer="91"/>
 </segment>
 <segment>
-<pinref part="IMU" gate="G$1" pin="FSYNC"/>
+<pinref part="U2" gate="G$1" pin="FSYNC"/>
 <wire x1="299.72" y1="53.34" x2="269.24" y2="53.34" width="0.1524" layer="91"/>
 <wire x1="269.24" y1="53.34" x2="269.24" y2="50.8" width="0.1524" layer="91"/>
 <pinref part="GND24" gate="1" pin="GND"/>
@@ -7269,7 +7269,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <wire x1="160.02" y1="66.04" x2="175.26" y2="66.04" width="0.1524" layer="91"/>
 </segment>
 <segment>
-<pinref part="MULTIPLEXER" gate="G$1" pin="VCC"/>
+<pinref part="74HC4051" gate="G$1" pin="VCC"/>
 <pinref part="P+3" gate="VCC" pin="VCC"/>
 <wire x1="76.2" y1="58.42" x2="99.06" y2="58.42" width="0.1524" layer="91"/>
 <pinref part="C3" gate="G$1" pin="1"/>
@@ -7342,7 +7342,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <wire x1="17.78" y1="81.28" x2="17.78" y2="58.42" width="0.1524" layer="91"/>
 <pinref part="FSR_HEADERS" gate="G$1" pin="8"/>
 <wire x1="17.78" y1="58.42" x2="15.24" y2="58.42" width="0.1524" layer="91"/>
-<pinref part="MULTIPLEXER" gate="G$1" pin="Y0"/>
+<pinref part="74HC4051" gate="G$1" pin="Y0"/>
 <wire x1="55.88" y1="58.42" x2="53.34" y2="58.42" width="0.1524" layer="91"/>
 <wire x1="53.34" y1="58.42" x2="53.34" y2="81.28" width="0.1524" layer="91"/>
 <wire x1="17.78" y1="81.28" x2="27.94" y2="81.28" width="0.1524" layer="91"/>
@@ -7358,7 +7358,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <wire x1="20.32" y1="71.12" x2="20.32" y2="55.88" width="0.1524" layer="91"/>
 <pinref part="FSR_HEADERS" gate="G$1" pin="7"/>
 <wire x1="20.32" y1="55.88" x2="15.24" y2="55.88" width="0.1524" layer="91"/>
-<pinref part="MULTIPLEXER" gate="G$1" pin="Y1"/>
+<pinref part="74HC4051" gate="G$1" pin="Y1"/>
 <wire x1="55.88" y1="55.88" x2="50.8" y2="55.88" width="0.1524" layer="91"/>
 <wire x1="50.8" y1="55.88" x2="50.8" y2="71.12" width="0.1524" layer="91"/>
 <wire x1="20.32" y1="71.12" x2="27.94" y2="71.12" width="0.1524" layer="91"/>
@@ -7374,7 +7374,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <wire x1="22.86" y1="60.96" x2="22.86" y2="53.34" width="0.1524" layer="91"/>
 <pinref part="FSR_HEADERS" gate="G$1" pin="6"/>
 <wire x1="22.86" y1="53.34" x2="15.24" y2="53.34" width="0.1524" layer="91"/>
-<pinref part="MULTIPLEXER" gate="G$1" pin="Y2"/>
+<pinref part="74HC4051" gate="G$1" pin="Y2"/>
 <wire x1="55.88" y1="53.34" x2="48.26" y2="53.34" width="0.1524" layer="91"/>
 <wire x1="48.26" y1="53.34" x2="48.26" y2="60.96" width="0.1524" layer="91"/>
 <wire x1="22.86" y1="60.96" x2="27.94" y2="60.96" width="0.1524" layer="91"/>
@@ -7389,7 +7389,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <segment>
 <pinref part="FSR_HEADERS" gate="G$1" pin="5"/>
 <wire x1="27.94" y1="50.8" x2="15.24" y2="50.8" width="0.1524" layer="91"/>
-<pinref part="MULTIPLEXER" gate="G$1" pin="Y3"/>
+<pinref part="74HC4051" gate="G$1" pin="Y3"/>
 <pinref part="R5" gate="R1" pin="1"/>
 <wire x1="27.94" y1="50.8" x2="55.88" y2="50.8" width="0.1524" layer="91"/>
 <wire x1="27.94" y1="50.8" x2="27.94" y2="55.88" width="0.1524" layer="91"/>
@@ -7403,7 +7403,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <pinref part="FSR_HEADERS" gate="G$1" pin="4"/>
 <wire x1="25.4" y1="48.26" x2="15.24" y2="48.26" width="0.1524" layer="91"/>
 <wire x1="25.4" y1="40.64" x2="27.94" y2="40.64" width="0.1524" layer="91"/>
-<pinref part="MULTIPLEXER" gate="G$1" pin="Y4"/>
+<pinref part="74HC4051" gate="G$1" pin="Y4"/>
 <wire x1="27.94" y1="40.64" x2="45.72" y2="40.64" width="0.1524" layer="91"/>
 <wire x1="55.88" y1="48.26" x2="45.72" y2="48.26" width="0.1524" layer="91"/>
 <wire x1="45.72" y1="48.26" x2="45.72" y2="40.64" width="0.1524" layer="91"/>
@@ -7419,7 +7419,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <pinref part="FSR_HEADERS" gate="G$1" pin="3"/>
 <wire x1="22.86" y1="45.72" x2="15.24" y2="45.72" width="0.1524" layer="91"/>
 <wire x1="22.86" y1="30.48" x2="27.94" y2="30.48" width="0.1524" layer="91"/>
-<pinref part="MULTIPLEXER" gate="G$1" pin="Y5"/>
+<pinref part="74HC4051" gate="G$1" pin="Y5"/>
 <wire x1="27.94" y1="30.48" x2="48.26" y2="30.48" width="0.1524" layer="91"/>
 <wire x1="55.88" y1="45.72" x2="48.26" y2="45.72" width="0.1524" layer="91"/>
 <wire x1="48.26" y1="45.72" x2="48.26" y2="30.48" width="0.1524" layer="91"/>
@@ -7435,7 +7435,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <pinref part="FSR_HEADERS" gate="G$1" pin="2"/>
 <wire x1="20.32" y1="43.18" x2="15.24" y2="43.18" width="0.1524" layer="91"/>
 <wire x1="20.32" y1="20.32" x2="27.94" y2="20.32" width="0.1524" layer="91"/>
-<pinref part="MULTIPLEXER" gate="G$1" pin="Y6"/>
+<pinref part="74HC4051" gate="G$1" pin="Y6"/>
 <wire x1="27.94" y1="20.32" x2="50.8" y2="20.32" width="0.1524" layer="91"/>
 <wire x1="55.88" y1="43.18" x2="50.8" y2="43.18" width="0.1524" layer="91"/>
 <wire x1="50.8" y1="43.18" x2="50.8" y2="20.32" width="0.1524" layer="91"/>
@@ -7451,7 +7451,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <pinref part="FSR_HEADERS" gate="G$1" pin="1"/>
 <wire x1="17.78" y1="40.64" x2="15.24" y2="40.64" width="0.1524" layer="91"/>
 <wire x1="17.78" y1="10.16" x2="27.94" y2="10.16" width="0.1524" layer="91"/>
-<pinref part="MULTIPLEXER" gate="G$1" pin="Y7"/>
+<pinref part="74HC4051" gate="G$1" pin="Y7"/>
 <wire x1="27.94" y1="10.16" x2="53.34" y2="10.16" width="0.1524" layer="91"/>
 <wire x1="55.88" y1="40.64" x2="53.34" y2="40.64" width="0.1524" layer="91"/>
 <wire x1="53.34" y1="40.64" x2="53.34" y2="10.16" width="0.1524" layer="91"/>
@@ -7486,7 +7486,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <label x="162.56" y="45.72" size="1.27" layer="95" xref="yes"/>
 </segment>
 <segment>
-<pinref part="MULTIPLEXER" gate="G$1" pin="Z"/>
+<pinref part="74HC4051" gate="G$1" pin="Z"/>
 <wire x1="55.88" y1="35.56" x2="55.88" y2="25.4" width="0.1524" layer="91"/>
 <wire x1="55.88" y1="25.4" x2="81.28" y2="25.4" width="0.1524" layer="91"/>
 <label x="81.28" y="25.4" size="1.27" layer="95" xref="yes"/>
@@ -7499,7 +7499,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <label x="132.08" y="63.5" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 <segment>
-<pinref part="MULTIPLEXER" gate="G$1" pin="S0"/>
+<pinref part="74HC4051" gate="G$1" pin="S0"/>
 <wire x1="76.2" y1="50.8" x2="81.28" y2="50.8" width="0.1524" layer="91"/>
 <label x="81.28" y="50.8" size="1.27" layer="95" xref="yes"/>
 </segment>
@@ -7511,7 +7511,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <label x="132.08" y="60.96" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 <segment>
-<pinref part="MULTIPLEXER" gate="G$1" pin="S1"/>
+<pinref part="74HC4051" gate="G$1" pin="S1"/>
 <wire x1="76.2" y1="48.26" x2="81.28" y2="48.26" width="0.1524" layer="91"/>
 <label x="81.28" y="48.26" size="1.27" layer="95" xref="yes"/>
 </segment>
@@ -7523,7 +7523,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <label x="132.08" y="58.42" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 <segment>
-<pinref part="MULTIPLEXER" gate="G$1" pin="S2"/>
+<pinref part="74HC4051" gate="G$1" pin="S2"/>
 <wire x1="76.2" y1="45.72" x2="81.28" y2="45.72" width="0.1524" layer="91"/>
 <label x="81.28" y="45.72" size="1.27" layer="95" xref="yes"/>
 </segment>
@@ -7541,7 +7541,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <wire x1="411.48" y1="68.58" x2="403.86" y2="68.58" width="0.1524" layer="91"/>
 <junction x="403.86" y="68.58"/>
 <pinref part="R16" gate="G$1" pin="1"/>
-<pinref part="LLC1" gate="G$1" pin="G"/>
+<pinref part="Q1" gate="G$1" pin="G"/>
 <pinref part="SUPPLY2" gate="G$1" pin="VCC_2"/>
 </segment>
 <segment>
@@ -7555,7 +7555,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <pinref part="SUPPLY7" gate="G$1" pin="VCC_2"/>
 </segment>
 <segment>
-<pinref part="IMU" gate="G$1" pin="VDD"/>
+<pinref part="U2" gate="G$1" pin="VDD"/>
 <wire x1="299.72" y1="58.42" x2="261.62" y2="58.42" width="0.1524" layer="91"/>
 <wire x1="261.62" y1="58.42" x2="261.62" y2="63.5" width="0.1524" layer="91"/>
 <pinref part="SUPPLY6" gate="G$1" pin="VCC_2"/>
@@ -7570,11 +7570,11 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <wire x1="411.48" y1="25.4" x2="403.86" y2="25.4" width="0.1524" layer="91"/>
 <junction x="403.86" y="25.4"/>
 <pinref part="R20" gate="G$1" pin="1"/>
-<pinref part="LLC2" gate="G$1" pin="G"/>
+<pinref part="Q2" gate="G$1" pin="G"/>
 <pinref part="SUPPLY8" gate="G$1" pin="VCC_2"/>
 </segment>
 <segment>
-<pinref part="IMU" gate="G$1" pin="VLOGIC"/>
+<pinref part="U2" gate="G$1" pin="VLOGIC"/>
 <wire x1="335.28" y1="45.72" x2="345.44" y2="45.72" width="0.1524" layer="91"/>
 <pinref part="C5" gate="G$1" pin="1"/>
 <wire x1="345.44" y1="45.72" x2="355.6" y2="45.72" width="0.1524" layer="91"/>
@@ -7594,7 +7594,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <wire x1="419.1" y1="10.16" x2="421.64" y2="10.16" width="0.1524" layer="91"/>
 <wire x1="419.1" y1="12.7" x2="419.1" y2="10.16" width="0.1524" layer="91"/>
 <junction x="419.1" y="10.16"/>
-<pinref part="LLC2" gate="G$1" pin="D"/>
+<pinref part="Q2" gate="G$1" pin="D"/>
 <pinref part="R21" gate="G$1" pin="2"/>
 <label x="421.64" y="10.16" size="1.27" layer="95" xref="yes"/>
 </segment>
@@ -7610,14 +7610,14 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <wire x1="419.1" y1="53.34" x2="421.64" y2="53.34" width="0.1524" layer="91"/>
 <wire x1="419.1" y1="55.88" x2="419.1" y2="53.34" width="0.1524" layer="91"/>
 <junction x="419.1" y="53.34"/>
-<pinref part="LLC1" gate="G$1" pin="D"/>
+<pinref part="Q1" gate="G$1" pin="D"/>
 <pinref part="R17" gate="G$1" pin="2"/>
 <label x="421.64" y="53.34" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 <net name="A5/SCL/LOW" class="0">
 <segment>
-<pinref part="IMU" gate="G$1" pin="SCL"/>
+<pinref part="U2" gate="G$1" pin="SCL"/>
 <wire x1="335.28" y1="53.34" x2="350.52" y2="53.34" width="0.1524" layer="91"/>
 <label x="355.6" y="53.34" size="1.27" layer="95" xref="yes"/>
 <pinref part="R19" gate="G$1" pin="2"/>
@@ -7630,14 +7630,14 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <wire x1="403.86" y1="10.16" x2="401.32" y2="10.16" width="0.1524" layer="91"/>
 <wire x1="403.86" y1="12.7" x2="403.86" y2="10.16" width="0.1524" layer="91"/>
 <junction x="403.86" y="10.16"/>
-<pinref part="LLC2" gate="G$1" pin="S"/>
+<pinref part="Q2" gate="G$1" pin="S"/>
 <pinref part="R20" gate="G$1" pin="2"/>
 <label x="401.32" y="10.16" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
 <net name="A4/SDA/LOW" class="0">
 <segment>
-<pinref part="IMU" gate="G$1" pin="SDA"/>
+<pinref part="U2" gate="G$1" pin="SDA"/>
 <wire x1="335.28" y1="50.8" x2="340.36" y2="50.8" width="0.1524" layer="91"/>
 <label x="355.6" y="50.8" size="1.27" layer="95" xref="yes"/>
 <pinref part="R18" gate="G$1" pin="2"/>
@@ -7650,14 +7650,14 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <wire x1="403.86" y1="53.34" x2="401.32" y2="53.34" width="0.1524" layer="91"/>
 <wire x1="403.86" y1="55.88" x2="403.86" y2="53.34" width="0.1524" layer="91"/>
 <junction x="403.86" y="53.34"/>
-<pinref part="LLC1" gate="G$1" pin="S"/>
+<pinref part="Q1" gate="G$1" pin="S"/>
 <pinref part="R16" gate="G$1" pin="2"/>
 <label x="401.32" y="53.34" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
 <net name="N$5" class="0">
 <segment>
-<pinref part="IMU" gate="G$1" pin="REGOUT"/>
+<pinref part="U2" gate="G$1" pin="REGOUT"/>
 <wire x1="299.72" y1="48.26" x2="284.48" y2="48.26" width="0.1524" layer="91"/>
 <wire x1="284.48" y1="48.26" x2="284.48" y2="42.164" width="0.1524" layer="91"/>
 <pinref part="C4" gate="G$1" pin="1"/>
@@ -7665,7 +7665,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 </net>
 <net name="N$3" class="0">
 <segment>
-<pinref part="IMU" gate="G$1" pin="CPOUT"/>
+<pinref part="U2" gate="G$1" pin="CPOUT"/>
 <wire x1="299.72" y1="45.72" x2="292.1" y2="45.72" width="0.1524" layer="91"/>
 <wire x1="292.1" y1="45.72" x2="292.1" y2="42.164" width="0.1524" layer="91"/>
 <pinref part="C6" gate="G$1" pin="1"/>
