@@ -1,10 +1,12 @@
 from sklearn import svm
 from sklearn.decomposition import PCA
+from sklearn import svm
 import csv
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
+
 
 def read_csv(filename):
     """
@@ -61,15 +63,26 @@ def plot_pca(X, Y):
     return ax, pca.explained_variance_ratio_
 
 
+# read in data
 datafilename = "1450_RicoGrandFinalPrez.csv"
 os.chdir("..")
 datafilepath = os.path.abspath(os.curdir) + "\\data\\" + datafilename
-
 data = read_csv(datafilepath)
 data = np.array(data)
+
+# split data into inputs and outputs
+[X, Y, _, _] = data_split(data, 1)
+
+# visualize data with PCA
+plt.figure(1)
+pca_ax, var = plot_pca(X, Y)
+plt.show()
+
+# split data into train and test
 [Xtrain, Ytrain, Xtest, Ytest] = data_split(data, 0.8)
 
-plt.figure(1)
-pca_ax, var = plot_pca(Xtrain, Ytrain)
+# train model
+model = svm.SVC(kernel='rbf', gamma='scale')
+model.fit(Xtrain, Ytrain)
+print(model.score(Xtest, Ytest))
 
-plt.show()
