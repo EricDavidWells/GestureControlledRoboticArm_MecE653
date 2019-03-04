@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="9.3.1">
+<eagle version="9.3.0">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
@@ -5955,6 +5955,12 @@ Basic schematic elements and footprints for 0603, 1206, and PTH resistors.</desc
 <class number="0" name="default" width="0.1778" drill="0.508">
 <clearance class="0" value="0.2286"/>
 </class>
+<class number="1" name="Pads" width="0.254" drill="0">
+<clearance class="1" value="0.2032"/>
+</class>
+<class number="2" name="PWR" width="0.3556" drill="0.508">
+<clearance class="2" value="0.2286"/>
+</class>
 </classes>
 <parts>
 <part name="74HC4051" library="SparkFun-IC-Logic" deviceset="74*4051" device="BQ" technology="HC" value="U1"/>
@@ -5993,31 +5999,31 @@ Basic schematic elements and footprints for 0603, 1206, and PTH resistors.</desc
 <part name="GND17" library="SparkFun-PowerSymbols" deviceset="GND" device=""/>
 <part name="GND20" library="SparkFun-PowerSymbols" deviceset="GND" device=""/>
 <part name="GND21" library="SparkFun-PowerSymbols" deviceset="GND" device=""/>
-<part name="C3" library="SparkFun-Capacitors" deviceset="0.1UF-25V(+80/-20%)(0603)" device="" value="0.1uF"/>
+<part name="C1" library="SparkFun-Capacitors" deviceset="0.1UF-25V(+80/-20%)(0603)" device="" value="0.1uF"/>
 <part name="GND22" library="SparkFun-Aesthetics" deviceset="GND" device=""/>
 <part name="U2" library="Testing" deviceset="MPU-6050" device="-1"/>
 <part name="Q1" library="SparkFun" deviceset="MOSFET-NCHANNEL" device="SMD" value="BSS138"/>
-<part name="R16" library="SparkFun" deviceset="RESISTOR" device="0603-RES" value="10K"/>
-<part name="R17" library="SparkFun" deviceset="RESISTOR" device="0603-RES" value="10K"/>
+<part name="R13" library="SparkFun" deviceset="RESISTOR" device="0603-RES" value="10K"/>
+<part name="R11" library="SparkFun" deviceset="RESISTOR" device="0603-RES" value="10K"/>
 <part name="SUPPLY2" library="SparkFun-PowerSymbols" deviceset="VCC_2" device=""/>
 <part name="P+7" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="VCC" device=""/>
 <part name="GND23" library="SparkFun-Aesthetics" deviceset="GND" device=""/>
 <part name="SUPPLY6" library="SparkFun-PowerSymbols" deviceset="VCC_2" device=""/>
 <part name="GND25" library="SparkFun-Aesthetics" deviceset="GND" device=""/>
 <part name="GND26" library="SparkFun-Aesthetics" deviceset="GND" device=""/>
-<part name="C4" library="SparkFun-Capacitors" deviceset="0.1UF-25V(+80/-20%)(0603)" device="" value="0.1uF"/>
+<part name="C3" library="SparkFun-Capacitors" deviceset="0.1UF-25V(+80/-20%)(0603)" device="" value="0.1uF"/>
 <part name="GND27" library="SparkFun-Aesthetics" deviceset="GND" device=""/>
-<part name="C6" library="SparkFun-Capacitors" deviceset="2.2NF/2200PF" device="-0603-50V-10%" value="2.2nF"/>
+<part name="C4" library="SparkFun-Capacitors" deviceset="2.2NF/2200PF" device="-0603-50V-10%" value="2.2nF"/>
 <part name="GND28" library="SparkFun-Aesthetics" deviceset="GND" device=""/>
-<part name="R18" library="SparkFun-Resistors" deviceset="10KOHM-1/10W-1%(0603)" device="0603" value="10K"/>
-<part name="R19" library="SparkFun-Resistors" deviceset="10KOHM-1/10W-1%(0603)" device="0603" value="10K"/>
+<part name="R15" library="SparkFun-Resistors" deviceset="10KOHM-1/10W-1%(0603)" device="0603" value="10K"/>
+<part name="R16" library="SparkFun-Resistors" deviceset="10KOHM-1/10W-1%(0603)" device="0603" value="10K"/>
 <part name="SUPPLY7" library="SparkFun-PowerSymbols" deviceset="VCC_2" device=""/>
-<part name="C7" library="SparkFun-Capacitors" deviceset="0.1UF-25V(+80/-20%)(0603)" device="" value="0.1uF"/>
+<part name="C2" library="SparkFun-Capacitors" deviceset="0.1UF-25V(+80/-20%)(0603)" device="" value="0.1uF"/>
 <part name="GND29" library="SparkFun-Aesthetics" deviceset="GND" device=""/>
 <part name="GND24" library="SparkFun-Aesthetics" deviceset="GND" device=""/>
 <part name="Q2" library="SparkFun" deviceset="MOSFET-NCHANNEL" device="SMD" value="BSS138"/>
-<part name="R20" library="SparkFun" deviceset="RESISTOR" device="0603-RES" value="10K"/>
-<part name="R21" library="SparkFun" deviceset="RESISTOR" device="0603-RES" value="10K"/>
+<part name="R14" library="SparkFun" deviceset="RESISTOR" device="0603-RES" value="10K"/>
+<part name="R12" library="SparkFun" deviceset="RESISTOR" device="0603-RES" value="10K"/>
 <part name="SUPPLY8" library="SparkFun-PowerSymbols" deviceset="VCC_2" device=""/>
 <part name="P+8" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="VCC" device=""/>
 <part name="SUPPLY9" library="SparkFun-PowerSymbols" deviceset="VCC_2" device=""/>
@@ -6228,7 +6234,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <instance part="GND21" gate="1" x="86.36" y="38.1" smashed="yes">
 <attribute name="VALUE" x="86.36" y="37.846" size="1.778" layer="96" align="top-center"/>
 </instance>
-<instance part="C3" gate="G$1" x="99.06" y="50.8" smashed="yes" rot="MR0">
+<instance part="C1" gate="G$1" x="99.06" y="50.8" smashed="yes" rot="MR0">
 <attribute name="NAME" x="102.616" y="53.721" size="1.778" layer="95" rot="MR0"/>
 <attribute name="VALUE" x="107.696" y="48.641" size="1.778" layer="96" rot="MR0"/>
 </instance>
@@ -6243,11 +6249,11 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <attribute name="NAME" x="407.67" y="58.166" size="1.778" layer="95"/>
 <attribute name="VALUE" x="406.146" y="47.752" size="1.778" layer="96"/>
 </instance>
-<instance part="R16" gate="G$1" x="403.86" y="60.96" smashed="yes" rot="R270">
+<instance part="R13" gate="G$1" x="403.86" y="60.96" smashed="yes" rot="R270">
 <attribute name="NAME" x="405.3586" y="64.77" size="1.778" layer="95" rot="R270"/>
 <attribute name="VALUE" x="400.558" y="64.77" size="1.778" layer="96" rot="R270"/>
 </instance>
-<instance part="R17" gate="G$1" x="419.1" y="60.96" smashed="yes" rot="R270">
+<instance part="R11" gate="G$1" x="419.1" y="60.96" smashed="yes" rot="R270">
 <attribute name="NAME" x="420.5986" y="64.77" size="1.778" layer="95" rot="R270"/>
 <attribute name="VALUE" x="415.798" y="64.77" size="1.778" layer="96" rot="R270"/>
 </instance>
@@ -6269,32 +6275,32 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <instance part="GND26" gate="1" x="299.72" y="27.94" smashed="yes">
 <attribute name="VALUE" x="297.18" y="25.4" size="1.778" layer="96"/>
 </instance>
-<instance part="C4" gate="G$1" x="284.48" y="37.084" smashed="yes" rot="MR0">
+<instance part="C3" gate="G$1" x="284.48" y="37.084" smashed="yes" rot="MR0">
 <attribute name="NAME" x="282.956" y="40.005" size="1.778" layer="95" rot="MR0"/>
 <attribute name="VALUE" x="282.956" y="34.925" size="1.778" layer="96" rot="MR0"/>
 </instance>
 <instance part="GND27" gate="1" x="284.48" y="27.94" smashed="yes">
 <attribute name="VALUE" x="281.94" y="25.4" size="1.778" layer="96"/>
 </instance>
-<instance part="C6" gate="G$1" x="292.1" y="37.084" smashed="yes">
+<instance part="C4" gate="G$1" x="292.1" y="37.084" smashed="yes">
 <attribute name="NAME" x="293.624" y="40.005" size="1.778" layer="95"/>
 <attribute name="VALUE" x="293.624" y="34.925" size="1.778" layer="96"/>
 </instance>
 <instance part="GND28" gate="1" x="292.1" y="27.94" smashed="yes">
 <attribute name="VALUE" x="289.56" y="25.4" size="1.778" layer="96"/>
 </instance>
-<instance part="R18" gate="G$1" x="340.36" y="60.96" smashed="yes" rot="R270">
+<instance part="R15" gate="G$1" x="340.36" y="60.96" smashed="yes" rot="R270">
 <attribute name="NAME" x="341.8586" y="64.77" size="1.778" layer="95" rot="R270"/>
 <attribute name="VALUE" x="337.058" y="64.77" size="1.778" layer="96" rot="R270"/>
 </instance>
-<instance part="R19" gate="G$1" x="350.52" y="60.96" smashed="yes" rot="R270">
+<instance part="R16" gate="G$1" x="350.52" y="60.96" smashed="yes" rot="R270">
 <attribute name="NAME" x="352.0186" y="64.77" size="1.778" layer="95" rot="R270"/>
 <attribute name="VALUE" x="347.218" y="64.77" size="1.778" layer="96" rot="R270"/>
 </instance>
 <instance part="SUPPLY7" gate="G$1" x="360.68" y="71.12" smashed="yes" rot="R270">
 <attribute name="VALUE" x="358.394" y="68.58" size="1.778" layer="96" align="bottom-center"/>
 </instance>
-<instance part="C7" gate="G$1" x="261.62" y="48.26" smashed="yes" rot="MR0">
+<instance part="C2" gate="G$1" x="261.62" y="48.26" smashed="yes" rot="MR0">
 <attribute name="NAME" x="260.096" y="51.181" size="1.778" layer="95" rot="MR0"/>
 <attribute name="VALUE" x="260.096" y="46.101" size="1.778" layer="96" rot="MR0"/>
 </instance>
@@ -6308,11 +6314,11 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <attribute name="NAME" x="407.67" y="14.986" size="1.778" layer="95"/>
 <attribute name="VALUE" x="406.146" y="4.572" size="1.778" layer="96"/>
 </instance>
-<instance part="R20" gate="G$1" x="403.86" y="17.78" smashed="yes" rot="R270">
+<instance part="R14" gate="G$1" x="403.86" y="17.78" smashed="yes" rot="R270">
 <attribute name="NAME" x="405.3586" y="21.59" size="1.778" layer="95" rot="R270"/>
 <attribute name="VALUE" x="400.558" y="21.59" size="1.778" layer="96" rot="R270"/>
 </instance>
-<instance part="R21" gate="G$1" x="419.1" y="17.78" smashed="yes" rot="R270">
+<instance part="R12" gate="G$1" x="419.1" y="17.78" smashed="yes" rot="R270">
 <attribute name="NAME" x="420.5986" y="21.59" size="1.778" layer="95" rot="R270"/>
 <attribute name="VALUE" x="415.798" y="21.59" size="1.778" layer="96" rot="R270"/>
 </instance>
@@ -6356,7 +6362,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <busses>
 </busses>
 <nets>
-<net name="GND" class="0">
+<net name="GND" class="1">
 <segment>
 <pinref part="GND1" gate="1" pin="GND"/>
 <wire x1="160.02" y1="71.12" x2="170.18" y2="71.12" width="0.1524" layer="91"/>
@@ -6444,7 +6450,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <wire x1="76.2" y1="40.64" x2="86.36" y2="40.64" width="0.1524" layer="91"/>
 </segment>
 <segment>
-<pinref part="C3" gate="G$1" pin="2"/>
+<pinref part="C1" gate="G$1" pin="2"/>
 <pinref part="GND22" gate="1" pin="GND"/>
 <wire x1="99.06" y1="45.72" x2="99.06" y2="48.26" width="0.1524" layer="91"/>
 </segment>
@@ -6465,17 +6471,17 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 </segment>
 <segment>
 <pinref part="GND27" gate="1" pin="GND"/>
-<pinref part="C4" gate="G$1" pin="2"/>
+<pinref part="C3" gate="G$1" pin="2"/>
 <wire x1="284.48" y1="30.48" x2="284.48" y2="34.544" width="0.1524" layer="91"/>
 </segment>
 <segment>
-<pinref part="C6" gate="G$1" pin="2"/>
+<pinref part="C4" gate="G$1" pin="2"/>
 <wire x1="292.1" y1="34.544" x2="292.1" y2="30.48" width="0.1524" layer="91"/>
 <pinref part="GND28" gate="1" pin="GND"/>
 </segment>
 <segment>
 <pinref part="GND29" gate="1" pin="GND"/>
-<pinref part="C7" gate="G$1" pin="2"/>
+<pinref part="C2" gate="G$1" pin="2"/>
 <wire x1="261.62" y1="40.64" x2="261.62" y2="45.72" width="0.1524" layer="91"/>
 </segment>
 <segment>
@@ -6500,7 +6506,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <pinref part="74HC4051" gate="G$1" pin="VCC"/>
 <pinref part="P+3" gate="VCC" pin="VCC"/>
 <wire x1="76.2" y1="58.42" x2="99.06" y2="58.42" width="0.1524" layer="91"/>
-<pinref part="C3" gate="G$1" pin="1"/>
+<pinref part="C1" gate="G$1" pin="1"/>
 <wire x1="99.06" y1="58.42" x2="104.14" y2="58.42" width="0.1524" layer="91"/>
 <wire x1="99.06" y1="55.88" x2="99.06" y2="58.42" width="0.1524" layer="91"/>
 <junction x="99.06" y="58.42"/>
@@ -6518,12 +6524,12 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 </segment>
 <segment>
 <wire x1="419.1" y1="66.04" x2="419.1" y2="73.66" width="0.1524" layer="91"/>
-<pinref part="R17" gate="G$1" pin="1"/>
+<pinref part="R11" gate="G$1" pin="1"/>
 <pinref part="P+7" gate="VCC" pin="VCC"/>
 </segment>
 <segment>
 <wire x1="419.1" y1="22.86" x2="419.1" y2="30.48" width="0.1524" layer="91"/>
-<pinref part="R21" gate="G$1" pin="1"/>
+<pinref part="R12" gate="G$1" pin="1"/>
 <pinref part="P+8" gate="VCC" pin="VCC"/>
 </segment>
 </net>
@@ -6770,15 +6776,15 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <wire x1="411.48" y1="60.96" x2="411.48" y2="68.58" width="0.1524" layer="91"/>
 <wire x1="411.48" y1="68.58" x2="403.86" y2="68.58" width="0.1524" layer="91"/>
 <junction x="403.86" y="68.58"/>
-<pinref part="R16" gate="G$1" pin="1"/>
+<pinref part="R13" gate="G$1" pin="1"/>
 <pinref part="Q1" gate="G$1" pin="G"/>
 <pinref part="SUPPLY2" gate="G$1" pin="VCC_2"/>
 </segment>
 <segment>
-<pinref part="R18" gate="G$1" pin="1"/>
+<pinref part="R15" gate="G$1" pin="1"/>
 <wire x1="340.36" y1="66.04" x2="340.36" y2="71.12" width="0.1524" layer="91"/>
 <wire x1="340.36" y1="71.12" x2="350.52" y2="71.12" width="0.1524" layer="91"/>
-<pinref part="R19" gate="G$1" pin="1"/>
+<pinref part="R16" gate="G$1" pin="1"/>
 <wire x1="350.52" y1="71.12" x2="360.68" y2="71.12" width="0.1524" layer="91"/>
 <wire x1="350.52" y1="66.04" x2="350.52" y2="71.12" width="0.1524" layer="91"/>
 <junction x="350.52" y="71.12"/>
@@ -6791,7 +6797,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <pinref part="SUPPLY6" gate="G$1" pin="VCC_2"/>
 <wire x1="261.62" y1="58.42" x2="261.62" y2="53.34" width="0.1524" layer="91"/>
 <junction x="261.62" y="58.42"/>
-<pinref part="C7" gate="G$1" pin="1"/>
+<pinref part="C2" gate="G$1" pin="1"/>
 </segment>
 <segment>
 <wire x1="403.86" y1="22.86" x2="403.86" y2="25.4" width="0.1524" layer="91"/>
@@ -6799,7 +6805,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <wire x1="411.48" y1="17.78" x2="411.48" y2="25.4" width="0.1524" layer="91"/>
 <wire x1="411.48" y1="25.4" x2="403.86" y2="25.4" width="0.1524" layer="91"/>
 <junction x="403.86" y="25.4"/>
-<pinref part="R20" gate="G$1" pin="1"/>
+<pinref part="R14" gate="G$1" pin="1"/>
 <pinref part="Q2" gate="G$1" pin="G"/>
 <pinref part="SUPPLY8" gate="G$1" pin="VCC_2"/>
 </segment>
@@ -6825,7 +6831,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <wire x1="419.1" y1="12.7" x2="419.1" y2="10.16" width="0.1524" layer="91"/>
 <junction x="419.1" y="10.16"/>
 <pinref part="Q2" gate="G$1" pin="D"/>
-<pinref part="R21" gate="G$1" pin="2"/>
+<pinref part="R12" gate="G$1" pin="2"/>
 <label x="421.64" y="10.16" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
@@ -6841,7 +6847,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <wire x1="419.1" y1="55.88" x2="419.1" y2="53.34" width="0.1524" layer="91"/>
 <junction x="419.1" y="53.34"/>
 <pinref part="Q1" gate="G$1" pin="D"/>
-<pinref part="R17" gate="G$1" pin="2"/>
+<pinref part="R11" gate="G$1" pin="2"/>
 <label x="421.64" y="53.34" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
@@ -6850,7 +6856,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <pinref part="U2" gate="G$1" pin="SCL"/>
 <wire x1="335.28" y1="53.34" x2="350.52" y2="53.34" width="0.1524" layer="91"/>
 <label x="355.6" y="53.34" size="1.27" layer="95" xref="yes"/>
-<pinref part="R19" gate="G$1" pin="2"/>
+<pinref part="R16" gate="G$1" pin="2"/>
 <wire x1="350.52" y1="53.34" x2="355.6" y2="53.34" width="0.1524" layer="91"/>
 <wire x1="350.52" y1="55.88" x2="350.52" y2="53.34" width="0.1524" layer="91"/>
 <junction x="350.52" y="53.34"/>
@@ -6861,7 +6867,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <wire x1="403.86" y1="12.7" x2="403.86" y2="10.16" width="0.1524" layer="91"/>
 <junction x="403.86" y="10.16"/>
 <pinref part="Q2" gate="G$1" pin="S"/>
-<pinref part="R20" gate="G$1" pin="2"/>
+<pinref part="R14" gate="G$1" pin="2"/>
 <label x="401.32" y="10.16" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
@@ -6870,7 +6876,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <pinref part="U2" gate="G$1" pin="SDA"/>
 <wire x1="335.28" y1="50.8" x2="340.36" y2="50.8" width="0.1524" layer="91"/>
 <label x="355.6" y="50.8" size="1.27" layer="95" xref="yes"/>
-<pinref part="R18" gate="G$1" pin="2"/>
+<pinref part="R15" gate="G$1" pin="2"/>
 <wire x1="340.36" y1="50.8" x2="355.6" y2="50.8" width="0.1524" layer="91"/>
 <wire x1="340.36" y1="50.8" x2="340.36" y2="55.88" width="0.1524" layer="91"/>
 <junction x="340.36" y="50.8"/>
@@ -6881,7 +6887,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <wire x1="403.86" y1="55.88" x2="403.86" y2="53.34" width="0.1524" layer="91"/>
 <junction x="403.86" y="53.34"/>
 <pinref part="Q1" gate="G$1" pin="S"/>
-<pinref part="R16" gate="G$1" pin="2"/>
+<pinref part="R13" gate="G$1" pin="2"/>
 <label x="401.32" y="53.34" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
@@ -6890,7 +6896,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <pinref part="U2" gate="G$1" pin="REGOUT"/>
 <wire x1="299.72" y1="48.26" x2="284.48" y2="48.26" width="0.1524" layer="91"/>
 <wire x1="284.48" y1="48.26" x2="284.48" y2="42.164" width="0.1524" layer="91"/>
-<pinref part="C4" gate="G$1" pin="1"/>
+<pinref part="C3" gate="G$1" pin="1"/>
 </segment>
 </net>
 <net name="N$3" class="0">
@@ -6898,7 +6904,7 @@ Otherwise connections follow the typical operating circuit defined on page 22 of
 <pinref part="U2" gate="G$1" pin="CPOUT"/>
 <wire x1="299.72" y1="45.72" x2="292.1" y2="45.72" width="0.1524" layer="91"/>
 <wire x1="292.1" y1="45.72" x2="292.1" y2="42.164" width="0.1524" layer="91"/>
-<pinref part="C6" gate="G$1" pin="1"/>
+<pinref part="C4" gate="G$1" pin="1"/>
 </segment>
 </net>
 </nets>
