@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="9.3.0">
+<eagle version="9.3.1">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
@@ -3750,7 +3750,6 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="VIN_HEADERS" library="SparkFun-Connectors" deviceset="CONN_02" device="PTH3"/>
 <part name="P+4" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="VCC" device=""/>
 <part name="GND15" library="SparkFun-PowerSymbols" deviceset="GND" device=""/>
-<part name="VCC_HEADERS" library="SparkFun-Connectors" deviceset="CONN_02" device=""/>
 <part name="P+5" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="VCC" device=""/>
 <part name="GND16" library="SparkFun-PowerSymbols" deviceset="GND" device=""/>
 <part name="GND17" library="SparkFun-PowerSymbols" deviceset="GND" device=""/>
@@ -3768,6 +3767,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="J4" library="SparkFun-Connectors" deviceset="CONN_01" device=""/>
 <part name="J5" library="SparkFun-Connectors" deviceset="CONN_01" device=""/>
 <part name="J6" library="SparkFun-Connectors" deviceset="CONN_01" device=""/>
+<part name="VCC_OUT" library="SparkFun-Connectors" deviceset="CONN_02" device="PTH3"/>
 </parts>
 <sheets>
 <sheet>
@@ -3804,10 +3804,6 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </instance>
 <instance part="GND15" gate="1" x="187.96" y="104.14" smashed="yes">
 <attribute name="VALUE" x="187.96" y="103.886" size="1.778" layer="96" align="top-center"/>
-</instance>
-<instance part="VCC_HEADERS" gate="G$1" x="124.46" y="2.54" smashed="yes">
-<attribute name="VALUE" x="121.92" y="-2.286" size="1.778" layer="96" font="vector"/>
-<attribute name="NAME" x="116.84" y="8.128" size="1.778" layer="95" font="vector"/>
 </instance>
 <instance part="P+5" gate="VCC" x="142.24" y="5.08" smashed="yes" rot="R270">
 <attribute name="VALUE" x="139.7" y="7.62" size="1.778" layer="96"/>
@@ -3869,6 +3865,10 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <attribute name="VALUE" x="187.706" y="-12.7" size="1.778" layer="96" font="vector" rot="R90"/>
 <attribute name="NAME" x="179.832" y="-12.7" size="1.778" layer="95" font="vector" rot="R90"/>
 </instance>
+<instance part="VCC_OUT" gate="G$1" x="124.46" y="2.54" smashed="yes">
+<attribute name="VALUE" x="121.92" y="-2.286" size="1.778" layer="96" font="vector"/>
+<attribute name="NAME" x="116.84" y="8.128" size="1.778" layer="95" font="vector"/>
+</instance>
 </instances>
 <busses>
 </busses>
@@ -3897,8 +3897,8 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </segment>
 <segment>
 <pinref part="GND16" gate="1" pin="GND"/>
-<pinref part="VCC_HEADERS" gate="G$1" pin="1"/>
 <wire x1="137.16" y1="2.54" x2="132.08" y2="2.54" width="0.1524" layer="91"/>
+<pinref part="VCC_OUT" gate="G$1" pin="1"/>
 </segment>
 <segment>
 <pinref part="VIN_HEADERS" gate="G$1" pin="2"/>
@@ -3934,9 +3934,9 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <pinref part="P+4" gate="VCC" pin="VCC"/>
 </segment>
 <segment>
-<pinref part="VCC_HEADERS" gate="G$1" pin="2"/>
 <pinref part="P+5" gate="VCC" pin="VCC"/>
 <wire x1="132.08" y1="5.08" x2="139.7" y2="5.08" width="0.1524" layer="91"/>
+<pinref part="VCC_OUT" gate="G$1" pin="2"/>
 </segment>
 <segment>
 <pinref part="P+2" gate="VCC" pin="VCC"/>
