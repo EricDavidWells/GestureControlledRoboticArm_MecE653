@@ -40,27 +40,6 @@ class serialPlot:
             print("Failed to connect with " + str(serialPort) + ' at ' + str(serialBaud) + ' BAUD.')
 
     def readSerialStart(self):
-        if self.thread == None:
-            self.thread = Thread(target=self.backgroundThread)
-
-            self.thread.start()
-            # Block till we start receiving values
-            while self.isReceiving != True:
-                time.sleep(0.1)
-
-    def getSerialData(self):
-        privateData = copy.deepcopy(self.rawData[:])
-        temp = []
-
-        for i in range(self.numSignals):
-            data = privateData[(i*self.dataNumBytes):(self.dataNumBytes + i*self.dataNumBytes)]
-            value,  = struct.unpack(self.dataType, data)
-            self.data[i].append(value)    # we get the latest data point and append it to our array
-            temp.append(value)
-
-        print(temp)
-
-    def backgroundThread(self):    # retrieve data
         time.sleep(1.0)  # give some buffer time for retrieving data
         self.serialConnection.reset_input_buffer()
         self.serialConnection.timeout = 0
@@ -71,6 +50,39 @@ class serialPlot:
         self.serialConnection.timeout = None
         # print(self.serialConnection._timeout)
 
+        # if self.thread == None:
+        #     self.thread = Thread(target=self.backgroundThread)
+        #
+        #     self.thread.start()
+        #     # Block till we start receiving values
+        #     while self.isReceiving != True:
+        #         time.sleep(0.1)
+
+    def getSerialData(self):
+
+        self.serialConnection.readinto(self.rawData)
+        privateData = copy.deepcopy(self.rawData[:])
+        temp = []
+
+        for i in range(self.numSignals):
+            data = privateData[(i*self.dataNumBytes):(self.dataNumBytes + i*self.dataNumBytes)]
+            value,  = struct.unpack(self.dataType, data)
+            self.data[i].append(value)    # we get the latest data point and append it to our array
+            temp.append(value)
+        return temp
+        # print(temp)
+
+    def backgroundThread(self):    # retrieve data
+        # time.sleep(1.0)  # give some buffer time for retrieving data
+        # self.serialConnection.reset_input_buffer()
+        # self.serialConnection.timeout = 0
+        #
+        # # print(self.serialConnection._timeout)
+        # self.serialConnection.read(16*20)
+        # # print(self.rawData)
+        # self.serialConnection.timeout = None
+        # # print(self.serialConnection._timeout)
+
         while (self.isRun):
             self.serialConnection.readinto(self.rawData)
             self.isReceiving = True
@@ -78,7 +90,7 @@ class serialPlot:
 
     def close(self):
         self.isRun = False
-        self.thread.join()
+        # self.thread.join()
         self.serialConnection.close()
         print('Disconnected...')
         # df = pd.DataFrame(self.csvData)
@@ -86,7 +98,8 @@ class serialPlot:
 
 
 def main():
-    portName = '/dev/cu.wchusbserial1420' #'/dev/cu.usbmodem14201'
+    # portName = '/dev/cu.wchusbserial1420' #'/dev/cu.usbmodem14201'
+    portName = 'COM5' #'/dev/cu.usbmodem14201'
     baudRate = 115200
     dataNumBytes = 2        # number of bytes of 1 data point - 2 bytes for INT
     numSignals = 8
@@ -94,9 +107,11 @@ def main():
     s = serialPlot(portName, baudRate, dataNumBytes, numSignals)
     s.readSerialStart()
 
-    for ii in range(10000):
-        s.getSerialData()
-
+    ts = time.time()
+    for ii in range(1000):
+        data = s.getSerialData()
+        print(data, ii)
+    print("asdflkjasdlkfjads: " + str(time.time()-ts))
     s.close()
 
 
