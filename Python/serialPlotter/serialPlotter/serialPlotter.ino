@@ -61,7 +61,8 @@ void writeBytes(int* data1, int* data2, int* data3, int* data4, int* data5, int*
   byte* byteData7 = (byte*)(data7);
   byte* byteData8 = (byte*)(data8);
 
-  byte buf[16] = {byteData1[0], byteData1[1],
+  byte buf[18] = {0x9F, 0x6E,
+                 byteData1[0], byteData1[1],
                  byteData2[0], byteData2[1],
                  byteData3[0], byteData3[1],
                  byteData4[0], byteData4[1],
@@ -69,7 +70,7 @@ void writeBytes(int* data1, int* data2, int* data3, int* data4, int* data5, int*
                  byteData6[0], byteData6[1],
                  byteData7[0], byteData7[1],
                  byteData8[0], byteData8[1]};
-  Serial.write(buf, 16);
+  Serial.write(buf, 18);
 }
 
 
