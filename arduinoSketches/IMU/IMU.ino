@@ -34,11 +34,10 @@ void setup() {
   setup_mpu_6050_registers();
 
   // Calibration
-  Serial.println("Calibrating gyro, place on level surface and do not move.");
+  //Serial.println("Calibrating gyro, place on level surface and do not move.");
 
   // // Take 2000 readings for each coordinate and then find average offset
   for (int cal_int = 0; cal_int < 2000; cal_int ++){
-    if(cal_int % 200 == 0)Serial.print(".");
     read_mpu_6050_data();
     gyro_x_cal += gyro_x;
     gyro_y_cal += gyro_y;
@@ -53,13 +52,13 @@ void setup() {
   gyro_z_cal /= 2000;
 
   // Display headers
-  Serial.print("\nNote 1: Yaw is not filtered and will drift!\n");
-  Serial.print("\nNote 2: Make sure sampling frequency is ~200 Hz\n");
-  Serial.print("Sampling Frequency (Hz)\t\t");
-  Serial.print("Roll (deg)\t\t");
-  Serial.print("Pitch (deg)\t\t");
-  Serial.print("Yaw (deg)\t\t\n");
-  delay(2000);
+  // Serial.print("\nNote 1: Yaw is not filtered and will drift!\n");
+  // Serial.print("\nNote 2: Make sure sampling frequency is ~200 Hz\n");
+  // Serial.print("Sampling Frequency (Hz)\t\t");
+  // Serial.print("Roll (deg)\t\t");
+  // Serial.print("Pitch (deg)\t\t");
+  // Serial.print("Yaw (deg)\t\t\n");
+  // delay(2000);
 
   // Reset the timers
   dtTimer = micros();
@@ -119,7 +118,7 @@ void loop() {
   // Serial.print(pitch,1);  Serial.print(",");
   // Serial.println(gyroYaw,1);
 
-  // Send pitch values to Python 
+  // Send pitch values to Python
   int val0 = int(pitch);
   int val1 = int(gyroPitch);
   int val2 = int(accelPitch);
