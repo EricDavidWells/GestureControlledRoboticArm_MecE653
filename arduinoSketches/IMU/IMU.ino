@@ -114,10 +114,17 @@ void loop() {
   // Serial.println(accelPitch);
 
   // Data out serial monitor
-  Serial.print(freq,0);   Serial.print(",");
-  Serial.print(roll,1);   Serial.print(",");
-  Serial.print(pitch,1);  Serial.print(",");
-  Serial.println(gyroYaw,1);
+  // Serial.print(freq,0);   Serial.print(",");
+  // Serial.print(roll,1);   Serial.print(",");
+  // Serial.print(pitch,1);  Serial.print(",");
+  // Serial.println(gyroYaw,1);
+
+  // Send pitch values to Python 
+  int val0 = int(pitch);
+  int val1 = int(gyroPitch);
+  int val2 = int(accelPitch);
+  int val3 = int(freq);
+  writeBytes(&val0, &val1, &val2, &val3);
 
 }
 
@@ -134,6 +141,21 @@ void timeSync(unsigned long deltaT){
   } else {}
 
   timer = currTime + timeToDelay;
+}
+
+
+void writeBytes(int* data1, int* data2, int* data3, int* data4){
+  byte* byteData1 = (byte*)(data1);
+  byte* byteData2 = (byte*)(data2);
+  byte* byteData3 = (byte*)(data3);
+  byte* byteData4 = (byte*)(data4);
+
+  byte buf[10] = {0x9F, 0x6E,
+                 byteData1[0], byteData1[1],
+                 byteData2[0], byteData2[1],
+                 byteData3[0], byteData3[1],
+                 byteData4[0], byteData4[1]};
+  Serial.write(buf, 10);
 }
 
 
