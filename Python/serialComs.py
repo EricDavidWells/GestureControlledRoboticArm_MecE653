@@ -34,10 +34,8 @@ class serialPlot:
         self.serialConnection.reset_input_buffer()
 
     def getSerialData(self):
-        if (self.serialConnection.read() is 0x9F) and (self.serialConnection.read() is 0x6E):
-            # self.serialConnection.readinto(self.rawData)
-            # self.rawData = self.serialConnection.read(self.numSignals * self.dataNumBytes)
-            self.rawData = bytearray(self.serialConnection.read(self.numSignals * self.dataNumBytes))
+        if (int(self.serialConnection.read().hex(),16) is 159) and (int(self.serialConnection.read().hex(),16) is 110):
+            self.rawData = self.serialConnection.read(self.numSignals * self.dataNumBytes)
 
             privateData = copy.deepcopy(self.rawData[:])
             temp = []
@@ -48,7 +46,7 @@ class serialPlot:
                 self.data[i].append(value)
                 temp.append(value)
 
-        return temp
+            return temp
 
     def close(self):
         self.serialConnection.close()
@@ -56,18 +54,22 @@ class serialPlot:
 
 
 def main():
-    portName = '/dev/cu.usbmodem14201' #'COM5'
+    portName = '/dev/cu.usbmodem14201'
     baudRate = 115200
     dataNumBytes = 2
     numSignals = 8
+    dataPoints = 1000
 
     s = serialPlot(portName, baudRate, dataNumBytes, numSignals)
     s.readSerialStart()
 
-    for ii in range(1000):
+    timer = time.time()
+
+    for ii in range(dataPoints):
         data = s.getSerialData()
         print(data, ii)
 
+    print('Average sample rate: ' + str(int(dataPoints/(time.time()-timer))) + ' Hz')
     s.close()
 
 
