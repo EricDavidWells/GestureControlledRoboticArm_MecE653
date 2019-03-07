@@ -1,7 +1,7 @@
 //Include I2C library and declare variables
 #include <Wire.h>
 
-long loopTimer, loopTimer2;
+long dtTimer;
 int temperature;
 double accelPitch;
 double accelRoll;
@@ -15,6 +15,8 @@ double freq, dt;
 double tau = 0.98;
 double roll = 0;
 double pitch = 0;
+unsigned long timer = 0;
+long loopTime = 5000;   // microseconds
 
 // 250 deg/s --> 131, 500 deg/s --> 65.5, 1000 deg/s --> 32.8, 2000 deg/s --> 16.4
 long scaleFactorGyro = 65.5;
@@ -34,8 +36,8 @@ void setup() {
   // Calibration
   Serial.println("Calibrating gyro, place on level surface and do not move.");
 
-  // // Take 3000 readings for each coordinate and then find average offset
-  for (int cal_int = 0; cal_int < 3000; cal_int ++){
+  // // Take 2000 readings for each coordinate and then find average offset
+  for (int cal_int = 0; cal_int < 2000; cal_int ++){
     if(cal_int % 200 == 0)Serial.print(".");
     read_mpu_6050_data();
     gyro_x_cal += gyro_x;
@@ -46,28 +48,30 @@ void setup() {
   }
 
   // Average the values
-  gyro_x_cal /= 3000;
-  gyro_y_cal /= 3000;
-  gyro_z_cal /= 3000;
+  gyro_x_cal /= 2000;
+  gyro_y_cal /= 2000;
+  gyro_z_cal /= 2000;
 
   // Display headers
   Serial.print("\nNote 1: Yaw is not filtered and will drift!\n");
-  Serial.print("\nNote 2: Make sure sampling frequency is ~250 Hz\n");
+  Serial.print("\nNote 2: Make sure sampling frequency is ~200 Hz\n");
   Serial.print("Sampling Frequency (Hz)\t\t");
   Serial.print("Roll (deg)\t\t");
   Serial.print("Pitch (deg)\t\t");
   Serial.print("Yaw (deg)\t\t\n");
   delay(2000);
 
-  //Reset the loop timer
-  loopTimer = micros();
-  loopTimer2 = micros();
+  // Reset the timers
+  dtTimer = micros();
+  timer = micros();
 }
 
 
 void loop() {
-  freq = 1/((micros() - loopTimer2) * 1e-6);
-  loopTimer2 = micros();
+  timeSync(loopTime);
+
+  freq = 1/((micros() - dtTimer) * 1e-6);
+  dtTimer = micros();
   dt = 1/freq;
 
   // Read the raw acc data from MPU-6050
@@ -115,9 +119,21 @@ void loop() {
   Serial.print(pitch,1);  Serial.print(",");
   Serial.println(gyroYaw,1);
 
-  // Wait until the loopTimer reaches 4000us (250Hz) before next loop
-  while (micros() - loopTimer <= 4000);
-  loopTimer = micros();
+}
+
+
+void timeSync(unsigned long deltaT){
+  unsigned long currTime = micros();
+  long timeToDelay = deltaT - (currTime - timer);
+
+  if (timeToDelay > 5000){
+    delay(timeToDelay / 1000);
+    delayMicroseconds(timeToDelay % 1000);
+  } else if (timeToDelay > 0){
+    delayMicroseconds(timeToDelay);
+  } else {}
+
+  timer = currTime + timeToDelay;
 }
 
 
