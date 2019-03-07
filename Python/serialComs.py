@@ -34,7 +34,11 @@ class serialPlot:
         self.serialConnection.reset_input_buffer()
 
     def getSerialData(self):
-        if (int(self.serialConnection.read().hex(),16) is 159) and (int(self.serialConnection.read().hex(),16) is 110):
+
+        a = self.serialConnection.read()
+        b = self.serialConnection.read()
+        if (struct.unpack('B', a)[0] is 0x9F) and (struct.unpack('B', b)[0] is 0x6E):
+        # if (int(self.serialConnection.read().hex(),16) is 159) and (int(self.serialConnection.read().hex(),16) is 110):
             self.rawData = self.serialConnection.read(self.numSignals * self.dataNumBytes)
 
             privateData = copy.deepcopy(self.rawData[:])
@@ -69,7 +73,7 @@ def main():
         data = s.getSerialData()
         print(data, ii)
 
-    print('Average sample rate: ' + str(int(dataPoints/(time.time()-timer))) + ' Hz')
+    print('Average sample rate: {}Hz'.format(int(dataPoints/(time.time()-timer))))
     s.close()
 
 
