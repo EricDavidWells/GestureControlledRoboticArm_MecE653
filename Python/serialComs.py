@@ -35,9 +35,8 @@ class serialPlot:
 
     def getSerialData(self):
 
-        a = self.serialConnection.read()
-        b = self.serialConnection.read()
-        if (struct.unpack('B', a)[0] is 0x9F) and (struct.unpack('B', b)[0] is 0x6E):
+        if (struct.unpack('B', self.serialConnection.read())[0] is 0x9F) \
+                and (struct.unpack('B', self.serialConnection.read())[0] is 0x6E):
         # if (int(self.serialConnection.read().hex(),16) is 159) and (int(self.serialConnection.read().hex(),16) is 110):
             self.rawData = self.serialConnection.read(self.numSignals * self.dataNumBytes)
 
@@ -58,7 +57,8 @@ class serialPlot:
 
 
 def main():
-    portName = '/dev/cu.usbmodem14201'
+    # portName = '/dev/cu.usbmodem14201'
+    portName = 'COM6'
     baudRate = 115200
     dataNumBytes = 2
     numSignals = 8

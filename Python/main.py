@@ -7,12 +7,16 @@ import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
 import serial
 import time
+import struct
+import copy
+
 
 def read_csv(filename):
     """
     reads csv file into a list of floats
     """
 
+    print("Reading in Data: ")
     with open(filename, 'r') as csvfile:
         reader = csv.reader(csvfile)
         data = []
@@ -30,8 +34,9 @@ def data_split(data, p):
     :param p: percentage of data to be used for training
     :return: data split into training and testing
     """
-    datashuff = np.array(data)
 
+    print("Visualizing Data: ")
+    datashuff = np.array(data)
     np.random.shuffle(datashuff)
 
     cutoff = int(p*data.shape[0])
@@ -44,7 +49,7 @@ def data_split(data, p):
     return Xtrain, Ytrain, Xtest, Ytest
 
 
-def plot_pca(X, Y):
+def plot_pca(X, Y, show=True):
     """
     Plots the 3 dimensional PCA reduced version of data X.  Y is used to change color of different labels.
     :param X: ndarray of input data without labels
@@ -60,13 +65,17 @@ def plot_pca(X, Y):
         Xtemp = Xpca[Y==i]
         ax.scatter3D(Xtemp[:, 0], Xtemp[:, 1], Xtemp[:, 2], cmap='Greens')
 
+    if show is True:
+        plt.figure(1)
+        plt.show()
+
     return ax, pca.explained_variance_ratio_
 
 
-def realtime(ser, model, t):
+def handshake_serial(ser, model, t):
     """
-    Realtime control of robot arm connected to serial port, continuously sends 's' character to recieve one line of
-    data poitns from arduino, makes prediction using model and sends prediction to arduino
+    Realtime control of robot arm connected to serial port using handshake protocol, continuously sends 's' character
+    to recieve one line of data poitns from arduino, makes prediction using model and sends prediction to arduino
 
     :param ser: serial port object
     :param model: model used for prediction, must have a .predict method
@@ -94,39 +103,108 @@ def realtime(ser, model, t):
     ser.write('-\n'.encode())
 
 
-# read in data
-print("Reading in Data: ")
-datafilename = "1450_RicoGrandFinalPrez.csv"
-os.chdir("..")
-datafilepath = os.path.abspath(os.curdir) + "\\data\\" + datafilename
-data = read_csv(datafilepath)
-data = np.array(data)
+def realtime_prediction(s, model, t, p=False):
+    starttime = time.time()
 
-print("Visualizing Data: ")
-# split data into inputs and outputs
-[X, Y, _, _] = data_split(data, 1)
+    s.readSerialStart()
+    counter = 0
+    while time.time() - starttime < t:
+        data = s.getSerialData()
+        if data:
+            pred = model.predict([data])
+            counter += 1
+            print(data, counter, pred)
 
-# visualize data with PCA
-plt.figure(1)
-pca_ax, var = plot_pca(X, Y)
-plt.show()
+    if p is True:
+        print('Average sample rate: {}Hz'.format(int(counter/t)))
 
-print("Training Model: ")
-# split data into train and test
-[Xtrain, Ytrain, Xtest, Ytest] = data_split(data, 0.8)
+    return pred
 
-# train model
-model = svm.SVC(kernel='rbf', gamma='scale')
-model.fit(Xtrain, Ytrain)
-print("model accuracy: ", model.score(Xtest, Ytest))
 
-print("Connecting to Serial: ")
-# connect to serial
-ser = serial.Serial('COM6', 115200)
-time.sleep(3)
+class serialPlot:
+    def __init__(self, serialPort, serialBaud, dataNumBytes, numSignals):
+        self.port = serialPort
+        self.baud = serialBaud
+        self.dataNumBytes = dataNumBytes
+        self.numSignals = numSignals
+        self.rawData = bytearray(numSignals * dataNumBytes)
+        self.dataType = None
 
-print("Starting RealTime Control: ")
-# run real time control
-realtime(ser, model, 5)
+        if dataNumBytes == 2:
+            self.dataType = 'h'
+        elif dataNumBytes == 4:
+            self.dataType = 'f'
 
-ser.close()
+        self.data = []
+        for i in range(numSignals):
+            self.data.append([0])
+
+        print('Trying to connect to: ' + str(serialPort) + ' at ' + str(serialBaud) + ' BAUD.')
+        try:
+            self.serialConnection = serial.Serial(serialPort, serialBaud, timeout=4)
+            print('Connected to ' + str(serialPort) + ' at ' + str(serialBaud) + ' BAUD.')
+        except:
+            print("Failed to connect with " + str(serialPort) + ' at ' + str(serialBaud) + ' BAUD.')
+
+    def readSerialStart(self):
+        time.sleep(1.0)
+        self.serialConnection.reset_input_buffer()
+
+    def getSerialData(self):
+
+        if (struct.unpack('B', self.serialConnection.read())[0] is 0x9F) \
+                and (struct.unpack('B', self.serialConnection.read())[0] is 0x6E):
+        # if (int(self.serialConnection.read().hex(),16) is 159) and (int(self.serialConnection.read().hex(),16) is 110):
+            self.rawData = self.serialConnection.read(self.numSignals * self.dataNumBytes)
+
+            privateData = copy.deepcopy(self.rawData[:])
+            temp = []
+
+            for i in range(self.numSignals):
+                data = privateData[(i*self.dataNumBytes):(self.dataNumBytes + i*self.dataNumBytes)]
+                value,  = struct.unpack(self.dataType, data)
+                self.data[i].append(value)
+                temp.append(value)
+
+            return temp
+
+    def close(self):
+        self.serialConnection.close()
+        print('Disconnected...')
+
+
+def main():
+    portName = 'COM6'
+    baudRate = 115200
+    dataNumBytes = 2
+    numSignals = 8
+    dataPoints = 1000
+    datafilename = "1450_RicoGrandFinalPrezMod.csv"
+    os.chdir("..")
+    datafilepath = os.path.abspath(os.curdir) + "\\data\\" + datafilename
+
+    # CONNECT TO TO SERIAL
+    s = serialPlot(portName, baudRate, dataNumBytes, numSignals)
+
+    # READ DATAFILE
+    data = read_csv(datafilepath)
+    data = np.array(data)
+
+    # VISUALIZE DATA
+    [X, Y, _, _] = data_split(data, 1)
+    pca_ax, var = plot_pca(X, Y)
+
+    # TRAIN MODEL
+    [Xtrain, Ytrain, Xtest, Ytest] = data_split(data, 0.8)
+    model = svm.SVC(kernel='rbf', gamma='scale')
+    model.fit(Xtrain, Ytrain)
+    print("model accuracy: ", model.score(Xtest, Ytest))
+
+    # REAL TIME PREDICTION
+    realtime_prediction(s, model, 5, True)
+
+    s.close()
+
+
+if __name__ == '__main__':
+    main()
