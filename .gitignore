@@ -3,3 +3,5 @@
 *.s#?
 *.b#?
 *.pro
+__pycache__/
+*.py[cod]

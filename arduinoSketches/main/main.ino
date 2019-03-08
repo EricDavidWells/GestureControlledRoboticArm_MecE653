@@ -25,7 +25,7 @@ float fsrV;
 float fsrR;
 float fsrG;
 
-String label = "foo\n";
+String label = "foo";
 String incomingString;
 int dataCount = 0;
 
@@ -34,6 +34,8 @@ int y;
 
 
 void setup(){
+
+
   // Set up serial and pin mode
   Serial.begin(115200);
   Serial.setTimeout(3);
@@ -49,15 +51,15 @@ void setup(){
   Shoulder.writeMicroseconds(Shoulderpos);
   Elbow.writeMicroseconds(Elbowpos);
   Hand.writeMicroseconds(Handpos);
-
   // Start the MPU 6050
-  setup_mpu_6050_registers();
+//  setup_mpu_6050_registers();
+
 }
 
 
 void loop(){
   // Read the raw acc data from MPU-6050
-  read_mpu_6050_data();
+//  read_mpu_6050_data();
 
   // Convert acceleration to g force
   accel_x = (double)acc_x / (double)scaleFactor;
@@ -78,21 +80,25 @@ void loop(){
 
   // Get user/MATLAB input through serial port
   if (Serial.available() > 0) {
-    incomingString = Serial.readString();
-
-    if (incomingString.toInt() > 20){
-      dataCount = incomingString.toInt();
+    char buf[8];
+    int len = Serial.readBytesUntil('\n', buf, 8);
+    
+    if (buf[0] == 'd'){
+      dataCount = (buf[1]-'0')*1000 + (buf[2]-'0')*100 + (buf[3]-'0')*10 + (buf[4]-'0');
     }
-    else if (incomingString == "a\n") {
+    else if (buf[0] == 's') {
       dataCount = 1;
     }
-    else if (incomingString.startsWith("s") == true){
-      incomingString.remove(0,1);
-      y = incomingString.toInt();
+    else if (buf[0] == 'y'){
+      y = (buf[1] - '0');
     }
-    else {
-       label = incomingString;
+    else if(buf[0] == '+'){
+       label = "on";
     }
+    else if(buf[0] == '-'){
+       label = "off";
+    }
+    
   }
 
   // Move the servo(s) based on the classification
@@ -109,7 +115,7 @@ void loop(){
     Handpos -= 1;
   }
 
-  if (label == "on\n"){
+  if (label == "on"){
   Shoulderpos = constrain(Shoulderpos, 500, 2000);
   Elbowpos = constrain(Elbowpos, 500, 2000);
   Handpos = constrain(Handpos, 1000, 3000);
@@ -144,15 +150,15 @@ void loop(){
   // Display data [in grams] and add small pause
   float aveforce = 0;
       for (int i=0; i<8; i++){
-          Serial.print(force[i],1);
+          Serial.print(force[i],0);
           Serial.print(',');
           aveforce += force[i];
         }
 
       aveforce = aveforce/8;
-      Serial.print(aveforce,1);
+      Serial.print(aveforce,0);
       Serial.print(',');
-      Serial.print(label);
+      Serial.println(label);
 
       dataCount -= 1;
   }
