@@ -27,7 +27,7 @@ def read_csv(filename):
     return data
 
 
-def data_split(data, p):
+def data_split(X, Y, p):
     """
     splits data into training and testing data by percentage p.
     :param data: ndarray of total data to be split
@@ -36,6 +36,8 @@ def data_split(data, p):
     """
 
     print("Visualizing Data: ")
+
+    data = np.hstack((X, np.transpose(np.array([Y]))))
     datashuff = np.array(data)
     np.random.shuffle(datashuff)
 
@@ -101,6 +103,26 @@ def handshake_serial(ser, model, t):
         counter += 1
 
     ser.write('-\n'.encode())
+
+
+def get_training_data(s, n, classnum, trainnum):
+    s.readSerialStart()
+    xdata = []
+    ydata = []
+    counter = 0
+    for i in range(0, trainnum):
+        input("training iteration: {0}".format(i))
+        for k in range(0, classnum):
+            input("class number: {0}".format(k))
+            for j in range(0, n):
+                data = s.getSerialData()
+                xdata.append(data)
+                ydata.append(k)
+                if counter > 50:
+                    print('.')
+                    counter = 0
+                counter += 1
+    return np.array(xdata), np.array(ydata)
 
 
 def realtime_prediction(s, model, t, p=False):
@@ -186,16 +208,20 @@ def main():
     # CONNECT TO TO SERIAL
     s = serialPlot(portName, baudRate, dataNumBytes, numSignals)
 
-    # READ DATAFILE
-    data = read_csv(datafilepath)
-    data = np.array(data)
+    # # READ DATAFILE
+    # data = read_csv(datafilepath)
+    # data = np.array(data)
+    # X = data[:, 0:-1]
+    # Y = data[:, -1]
+
+    # GET TRAINING DATA
+    [X, Y] = get_training_data(s, 200, 2, 2)
 
     # VISUALIZE DATA
-    [X, Y, _, _] = data_split(data, 1)
     pca_ax, var = plot_pca(X, Y)
 
     # TRAIN MODEL
-    [Xtrain, Ytrain, Xtest, Ytest] = data_split(data, 0.8)
+    [Xtrain, Ytrain, Xtest, Ytest] = data_split(X, Y, 0.8)
     model = svm.SVC(kernel='rbf', gamma='scale')
     model.fit(Xtrain, Ytrain)
     print("model accuracy: ", model.score(Xtest, Ytest))
