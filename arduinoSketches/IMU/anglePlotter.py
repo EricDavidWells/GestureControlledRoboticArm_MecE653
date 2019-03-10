@@ -32,7 +32,7 @@ class DAQ:
             print("Failed to connect with " + str(serialPort) + ' at ' + str(serialBaud) + ' BAUD.')
 
     def readSerialStart(self):
-        time.sleep(1)
+        time.sleep(2)
         self.serialConnection.reset_input_buffer()
 
     def getSerialData(self):
@@ -41,17 +41,17 @@ class DAQ:
 
             privateData = copy.deepcopy(self.rawData[:])
             temp = []
-
             for i in range(self.numSignals):
                 data = privateData[(i*self.dataNumBytes):(self.dataNumBytes + i*self.dataNumBytes)]
                 value,  = struct.unpack(self.dataType, data)
                 self.data[i].append(value)
                 temp.append(value)
 
-        if temp:
-            return temp ########### Change this variable name. Do we need to have self.rawData???
-        else:
-            getSerialData(self)
+        try:
+            if temp:
+                return temp
+        except:
+            return self.getSerialData()
 
     def close(self):
         self.serialConnection.close()
@@ -75,7 +75,6 @@ class IMU:
 
     def getRawIMUvalues(self, s):
         val = s.getSerialData()
-        print(val)
         self.gx = val[0]
         self.gy = val[1]
         self.gz = val[2]
@@ -138,22 +137,23 @@ class IMU:
         self.gyroRoll -= self.gy * dt
         self.gyroPitch += self.gx * dt
         self.gyroYaw += self.gz * dt
+        self.yaw = self.gyroYaw
 
         # Comp filter
-        self.roll = (tau)*(self.roll - self.gy*dt) + (1-tau)*(accRoll);
-        self.pitch = (tau)*(self.pitch + self.gx*dt) + (1-tau)*(accPitch);
+        self.roll = (tau)*(self.roll - self.gy*dt) + (1-tau)*(accRoll)
+        self.pitch = (tau)*(self.pitch + self.gx*dt) + (1-tau)*(accPitch)
 
 
 def main():
     portName = '/dev/cu.wchusbserial1410'
     baudRate = 115200
     dataNumBytes = 2
-    numSignals = 4
+    numSignals = 6
 
     s = DAQ(portName, baudRate, dataNumBytes, numSignals)
     s.readSerialStart()
 
-    numCalibrationPoints = 100
+    numCalibrationPoints = 500
     gyroScaleFactor = 65.5 # 250 deg/s --> 131, 500 deg/s --> 65.5, 1000 deg/s --> 32.8, 2000 deg/s --> 16.4
     accScaleFactor = 8192 # 2g --> 16384 , 4g --> 8192 , 8g --> 4096, 16g --> 2048
     tau = 0.98
@@ -165,7 +165,8 @@ def main():
     pitchArray = []
     yawArray = []
 
-    while(time.time() < 10):
+    # while(time.time() > 20):
+    for ii in range(1000):
         imu.compFilter(s, 0.98)
         print(imu.roll, imu.pitch, imu.yaw)
 
@@ -173,9 +174,9 @@ def main():
         pitchArray.append(imu.pitch)
         yawArray.append(imu.yaw)
 
-    x = np.arange(len(pitch))
+    x = np.arange(len(rollArray))
 
-    plt.plot(x,rollArray,'-k',linewidth=3,label='Roll')
+    plt.plot(x,rollArray,'-r',linewidth=1,label='Roll')
     plt.plot(x,pitchArray,'-g',linewidth=1,label='Pitch')
     plt.plot(x,yawArray,'-b',linewidth=1,label='Yaw')
 
