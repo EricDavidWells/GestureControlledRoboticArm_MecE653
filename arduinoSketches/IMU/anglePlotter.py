@@ -31,7 +31,7 @@ class DAQ:
             print("Failed to connect with " + str(serialPort) + ' at ' + str(serialBaud) + ' BAUD.')
 
     def readSerialStart(self):
-        time.sleep(1.0)
+        time.sleep(1)
         self.serialConnection.reset_input_buffer()
 
     def getSerialData(self):
@@ -47,15 +47,18 @@ class DAQ:
                 self.data[i].append(value)
                 temp.append(value)
 
-            return temp
+        if temp:
+            return temp ########### Change this variable name. Do we need to have self.rawData???
+        else:
+            getSerialData(self)
 
     def close(self):
         self.serialConnection.close()
         print('Disconnected...')
 
 
+def calibrateGyro(s, N):
 
-def calibrateGyro(N):
     # Display message
     print("Calibrating gyro with " + str(N) + "points. Do not move!")
 
@@ -76,52 +79,53 @@ def calibrateGyro(N):
     gyro_y_cal /= N;
     gyro_z_cal /= N;
 
-    # Return array of offsets
-    calibration = [gyro_x_cal, gyro_y_cal, gyro_z_cal]
     print("Calibration complete")
 
-    return calibration
+    return gyro_x_cal, gyro_y_cal, gyro_z_cal
 
 
-# def compFilter(gyro_x, gyro_y, gyro_z, acc_x, acc_y, acc_z):
-#     # 250 deg/s --> 131, 500 deg/s --> 65.5, 1000 deg/s --> 32.8, 2000 deg/s --> 16.4
-#     long scaleFactorGyro = 65.5;
+def sensorRead(s, gyro_x_cal, gyro_y_cal, gyro_z_cal, scaleFactorGyro, scaleFactorAcc):
+
+    # Get data
+    data = s.getSerialData()
+
+    # Subtract the offset calibration value
+    data[0] -= gyro_x_cal
+    data[1] -= gyro_y_cal
+    data[2] -= gyro_z_cal
+
+    # Convert to instantaneous degrees per second
+    w_x = float(data[0]) / float(scaleFactorGyro);
+    w_y = float(data[1]) / float(scaleFactorGyro);
+    w_z = float(data[2]) / float(scaleFactorGyro);
+
+    # Convert to g force
+    a_x = float(data[3]) / float(scaleFactorAcc);
+    a_y = float(data[4]) / float(scaleFactorAcc);
+    a_z = float(data[5]) / float(scaleFactorAcc);
+
+    return w_x, w_y, w_z, a_x, a_y, a_z
+
+
+# def compFilter(tau):
 #
-#     # 2g --> 16384 , 4g --> 8192 , 8g --> 4096, 16g --> 2048
-#     long scaleFactorAccel = 8192;
-#
-#     tau = 0.98
 #
 #     freq = 1/((micros() - dtTimer) * 1e-6);
 #     dtTimer = micros();
 #     dt = 1/freq;
 #
-#     // Subtract the offset calibration value
-#     gyro_x -= gyro_x_cal;
-#     gyro_y -= gyro_y_cal;
-#     gyro_z -= gyro_z_cal;
-#
-#     // Convert to instantaneous degrees per second
-#     rotation_x = (double)gyro_x / (double)scaleFactorGyro;
-#     rotation_y = (double)gyro_y / (double)scaleFactorGyro;
-#     rotation_z = (double)gyro_z / (double)scaleFactorGyro;
-#
-#     // Convert to g force
-#     accel_x = (double)acc_x / (double)scaleFactorAccel;
-#     accel_y = (double)acc_y / (double)scaleFactorAccel;
-#     accel_z = (double)acc_z / (double)scaleFactorAccel;
 #
 #     // Complementary filter
-#     accelPitch = atan2(accel_y, accel_z) * RAD_TO_DEG;
-#     accelRoll = atan2(accel_x, accel_z) * RAD_TO_DEG;
+#     accelPitch = atan2(a_y, a_z) * RAD_TO_DEG;
+#     accelRoll = atan2(a_x, a_z) * RAD_TO_DEG;
 #
-#     pitch = (tau)*(pitch + rotation_x*dt) + (1-tau)*(accelPitch);
-#     roll = (tau)*(roll - rotation_y*dt) + (1-tau)*(accelRoll);
+#     pitch = (tau)*(pitch + w_x*dt) + (1-tau)*(accelPitch);
+#     roll = (tau)*(roll - w_y*dt) + (1-tau)*(accelRoll);
 #
-#     gyroPitch += rotation_x*dt;
-#     gyroRoll -= rotation_y*dt;
-#     gyroYaw += rotation_z*dt;
-#
+#     gyroPitch += w_x*dt;
+#     gyroRoll -= w_y*dt;
+#     gyroYaw += w_z*dt;
+
 
 def main():
     portName = '/dev/cu.wchusbserial1420'
@@ -129,17 +133,26 @@ def main():
     dataNumBytes = 2
     numSignals = 4
 
-    calibrationPoints = 1000;
+    numCalibrationPoints = 1000;
+
+    scaleFactorGyro = 65.5; # 250 deg/s --> 131, 500 deg/s --> 65.5, 1000 deg/s --> 32.8, 2000 deg/s --> 16.4
+    scaleFactorAcc = 8192; # 2g --> 16384 , 4g --> 8192 , 8g --> 4096, 16g --> 2048
+
+    tau = 0.98
 
     s = DAQ(portName, baudRate, dataNumBytes, numSignals)
     s.readSerialStart()
 
-    cal = calibrateGyro(calibrationPoints):
+    gyro_x_cal, gyro_y_cal, gyro_z_cal = calibrateGyro(s,numCalibrationPoints)
+    w_x, w_y, w_z, a_x, a_y, a_z = sensorRead(s, gyro_x_cal, gyro_y_cal, gyro_z_cal, scaleFactorGyro, scaleFactorAcc)
 
+    #
     # dataPoints = 2000 # Change to time... Same with x axis
     #
     # for ii in range(dataPoints):
-    #     data = s.getSerialData()
+    #     rawData = s.getSerialData()
+    #
+    #
     #     print(data, ii)
     #
     #     pitch.append(data[0])
