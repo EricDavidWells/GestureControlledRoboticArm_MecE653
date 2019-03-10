@@ -1,4 +1,4 @@
-# Adapted from https://www.thepoorengineer.com/en/arduino-python-plot/
+# Adapted from: https://www.thepoorengineer.com/en/arduino-python-plot/
 from threading import Thread
 import serial
 import time
@@ -7,31 +7,30 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import struct
 import copy
-import pandas as pd
 
 
 class serialPlot:
-    def __init__(self, serialPort='/dev/cu.usbmodem14201', serialBaud=38400, plotLength=100, dataNumBytes=2, numPlots=1):
+    def __init__(self, serialPort, serialBaud, plotLength, dataNumBytes, numSignals):
         self.port = serialPort
         self.baud = serialBaud
         self.plotMaxLength = plotLength
         self.dataNumBytes = dataNumBytes
-        self.numPlots = numPlots
-        self.rawData = bytearray(numPlots * dataNumBytes)
+        self.numSignals = numSignals
+        self.rawData = bytearray(numSignals * dataNumBytes)
         self.dataType = None
+
         if dataNumBytes == 2:
-            self.dataType = 'h'     # 2 byte integer
-        elif dataNumBytes == 4:
-            self.dataType = 'f'     # 4 byte float
+            self.dataType = 'h'
+
         self.data = []
-        for i in range(numPlots):   # give an array for each type of data and store them in a list
+        for i in range(numSignals):
             self.data.append(collections.deque([0] * plotLength, maxlen=plotLength))
+
         self.isRun = True
         self.isReceiving = False
         self.thread = None
         self.plotTimer = 0
         self.previousTimer = 0
-        # self.csvData = []
 
         print('Trying to connect to: ' + str(serialPort) + ' at ' + str(serialBaud) + ' BAUD.')
         try:
@@ -43,7 +42,6 @@ class serialPlot:
     def readSerialStart(self):
         if self.thread == None:
             self.thread = Thread(target=self.backgroundThread)
-
             self.thread.start()
             # Block till we start receiving values
             while self.isReceiving != True:
@@ -51,56 +49,45 @@ class serialPlot:
 
     def getSerialData(self, frame, lines, lineValueText, lineLabel, timeText):
         currentTimer = time.perf_counter()
-        self.plotTimer = int((currentTimer - self.previousTimer) * 1000)     # the first reading will be erroneous
+        self.plotTimer = int((currentTimer - self.previousTimer) * 1000)
         self.previousTimer = currentTimer
         timeText.set_text('Plot Interval = ' + str(self.plotTimer) + ' ms')
-        privateData = copy.deepcopy(self.rawData[:])    # so that the 3 values in our plots will be synchronized to the same sample time
-        for i in range(self.numPlots):
+        privateData = copy.deepcopy(self.rawData[:])
+        for i in range(self.numSignals):
             data = privateData[(i*self.dataNumBytes):(self.dataNumBytes + i*self.dataNumBytes)]
             value,  = struct.unpack(self.dataType, data)
-            self.data[i].append(value)    # we get the latest data point and append it to our array
+            self.data[i].append(value)
             lines[i].set_data(range(self.plotMaxLength), self.data[i])
             lineValueText[i].set_text('[' + lineLabel[i] + '] = ' + str(value))
-        # self.csvData.append([self.data[0][-1], self.data[1][-1], self.data[2][-1]])
 
-    def backgroundThread(self):    # retrieve data
-        time.sleep(1.0)  # give some buffer time for retrieving data
+    def backgroundThread(self):
+        time.sleep(2)
         self.serialConnection.reset_input_buffer()
-        self.serialConnection.timeout = 0
-
-        # print(self.serialConnection._timeout)
-        self.serialConnection.read(16*20)
-        # print(self.rawData)
-        self.serialConnection.timeout = None
-        # print(self.serialConnection._timeout)
 
         while (self.isRun):
-            self.serialConnection.readinto(self.rawData)
-            self.isReceiving = True
-            # print(self.rawData)
+            if (struct.unpack('B', self.serialConnection.read())[0] is 0x9F) and (struct.unpack('B', self.serialConnection.read())[0] is 0x6E):
+                self.rawData = self.serialConnection.read(self.numSignals * self.dataNumBytes)
+                self.isReceiving = True
 
     def close(self):
         self.isRun = False
         self.thread.join()
         self.serialConnection.close()
         print('Disconnected...')
-        # df = pd.DataFrame(self.csvData)
-        # df.to_csv('../Desktop/data.csv')
 
-å
+
+
 def main():
-    # portName = 'COM5'
-    portName = '/dev/cu.usbmodem14201'
+    portName = '/dev/cu.wchusbserial1410'
     baudRate = 115200
-    maxPlotLength = 100     # number of points in x-axis of real time plot
-    dataNumBytes = 2        # number of bytes of 1 data point
-    numPlots = 8            # number of plots in 1 graph
+    maxPlotLength = 100
+    dataNumBytes = 2
+    numSignals = 8
 
-    s = serialPlot(portName, baudRate, maxPlotLength, dataNumBytes, numPlots)
+    s = serialPlot(portName, baudRate, maxPlotLength, dataNumBytes, numSignals)
     s.readSerialStart()
 
-    # plotting starts below
-    pltInterval = 20    # Period at which the plot animation updates [ms]
+    pltInterval = 20
     xmin = 0
     xmax = maxPlotLength
     ymin = 0
@@ -117,7 +104,7 @@ def main():
     timeText = ax.text(0.80, 0.95, '', transform=ax.transAxes)
     lines = []
     lineValueText = []
-    for i in range(numPlots):
+    for i in range(numSignals):
         lines.append(ax.plot([], [], style[i], label=lineLabel[i])[0])
         lineValueText.append(ax.text(0.05, 0.95-i*0.05, '', transform=ax.transAxes))
 
