@@ -58,133 +58,133 @@ class DAQ:
         print('Disconnected...')
 
 
-def calibrateGyro(s, N):
+class IMU:
+    def __init__(self, gyroScaleFactor, accScaleFactor):
+        self.gyroScaleFactor = gyroScaleFactor
+        self.accScaleFactor = accScaleFactor
 
-    # Display message
-    print("Calibrating gyro with " + str(N) + "points. Do not move!")
+        self.gx = None; self.gy = None; self.gz = None;
+        self.ax = None; self.ay = None; self.az = None;
 
-    # Initialize
-    gyro_x_cal = 0
-    gyro_y_cal = 0
-    gyro_z_cal = 0
+        self.gyroXcal = 0; self.gyroYcal = 0; self.gyroZcal = 0;
 
-    # Take N readings for each coordinate adding to itself
-    for ii in range(N):
-        data = s.getSerialData()
-        gyro_x_cal += data[0];
-        gyro_y_cal += data[1];
-        gyro_z_cal += data[2];
+        self.gyroRoll = 0; self.gyroPitch = 0; self.gyroYaw = 0;
+        self.roll = 0;     self.pitch = 0;     self.yaw = 0;
 
-    # Find average value
-    gyro_x_cal /= N;
-    gyro_y_cal /= N;
-    gyro_z_cal /= N;
+        self.dtTimer = 0
 
-    print("Calibration complete")
+    def getRawIMUvalues(self, s):
+        val = s.getSerialData()
+        print(val)
+        self.gx = val[0]
+        self.gy = val[1]
+        self.gz = val[2]
+        self.ax = val[3]
+        self.ay = val[4]
+        self.az = val[5]
 
-    return gyro_x_cal, gyro_y_cal, gyro_z_cal
+    def calibrateGyro(self, s, N):
+        # Display message
+        print("Calibrating gyro with " + str(N) + " points. Do not move!")
 
+        # Take N readings for each coordinate and add to itself
+        for ii in range(N):
+            self.getRawIMUvalues(s)
+            self.gyroXcal += self.gx
+            self.gyroYcal += self.gy
+            self.gyroZcal += self.gz
 
-def sensorRead(s, gyro_x_cal, gyro_y_cal, gyro_z_cal, scaleFactorGyro, scaleFactorAcc):
+        # Find average offset value
+        self.gyroXcal /= N
+        self.gyroYcal /= N
+        self.gyroZcal /= N
 
-    # Get data
-    data = s.getSerialData()
+        # Display message and restart timer for comp filter
+        print("Calibration complete")
+        self.dtTimer = time.time()
 
-    # Subtract the offset calibration value
-    data[0] -= gyro_x_cal
-    data[1] -= gyro_y_cal
-    data[2] -= gyro_z_cal
+    def processIMUvalues(self,s):
+        # Get data
+        self.getRawIMUvalues(s)
 
-    # Convert to instantaneous degrees per second
-    w_x = float(data[0]) / float(scaleFactorGyro);
-    w_y = float(data[1]) / float(scaleFactorGyro);
-    w_z = float(data[2]) / float(scaleFactorGyro);
+        # Subtract the offset calibration values
+        self.gx -= self.gyroXcal
+        self.gy -= self.gyroYcal
+        self.gz -= self.gyroZcal
 
-    # Convert to g force
-    a_x = float(data[3]) / float(scaleFactorAcc);
-    a_y = float(data[4]) / float(scaleFactorAcc);
-    a_z = float(data[5]) / float(scaleFactorAcc);
+        # Convert to instantaneous degrees per second
+        self.gx = self.gx / self.gyroScaleFactor
+        self.gy = self.gy / self.gyroScaleFactor
+        self.gz = self.gz / self.gyroScaleFactor
 
-    return w_x, w_y, w_z, a_x, a_y, a_z
+        # Convert to g force
+        self.ax = self.ax / self.accScaleFactor
+        self.ay = self.ay / self.accScaleFactor
+        self.az = self.az / self.accScaleFactor
 
+    def compFilter(self, s, tau):
+        # Get the processed values from IMU
+        self.processIMUvalues(s)
 
-def compFilter(w_x, w_y, w_z, a_x, a_y, a_z, roll, pitch, dtTimer, tau):
+        # Get delta time and record time for next call
+        dt = time.time() - self.dtTimer
+        self.dtTimer = time.time()
 
-    # Get delta time
-    dt = time.time() - dtTimer
-    dtTimer = time.time()
+        # Acceleration vector angle
+        accPitch = math.degrees(math.atan2(self.ay, self.az))
+        accRoll = math.degrees(math.atan2(self.ax, self.az))
 
-    # Acceleration vector angle
-    accPitch = math.degrees(atan2(a_y, a_z))
-    accRoll = math.degrees(atan2(a_x, a_z))
+        # Gyro integration angle
+        self.gyroRoll -= self.gy * dt
+        self.gyroPitch += self.gx * dt
+        self.gyroYaw += self.gz * dt
 
-    # Gyro integration angle
-    gyroPitch += w_x * dt
-    gyroRoll -= w_y * dt
-    gyroYaw += w_z * dt
-
-    # Comp filter
-    roll = (tau)*(roll - w_y*dt) + (1-tau)*(accRoll);
-    pitch = (tau)*(pitch + w_x*dt) + (1-tau)*(accPitch);
-
-    return roll, pitch, dtTimer
+        # Comp filter
+        self.roll = (tau)*(self.roll - self.gy*dt) + (1-tau)*(accRoll);
+        self.pitch = (tau)*(self.pitch + self.gx*dt) + (1-tau)*(accPitch);
 
 
 def main():
-    portName = '/dev/cu.wchusbserial1420'
+    portName = '/dev/cu.wchusbserial1410'
     baudRate = 115200
     dataNumBytes = 2
     numSignals = 4
 
-    numCalibrationPoints = 1000
-
-    scaleFactorGyro = 65.5 # 250 deg/s --> 131, 500 deg/s --> 65.5, 1000 deg/s --> 32.8, 2000 deg/s --> 16.4
-    scaleFactorAcc = 8192 # 2g --> 16384 , 4g --> 8192 , 8g --> 4096, 16g --> 2048
-    dtTimer = 0
-    roll = 0
-    pitch = 0
-
-    tau = 0.98
-
     s = DAQ(portName, baudRate, dataNumBytes, numSignals)
     s.readSerialStart()
 
-    gyro_x_cal, gyro_y_cal, gyro_z_cal = calibrateGyro(s,numCalibrationPoints)
+    numCalibrationPoints = 100
+    gyroScaleFactor = 65.5 # 250 deg/s --> 131, 500 deg/s --> 65.5, 1000 deg/s --> 32.8, 2000 deg/s --> 16.4
+    accScaleFactor = 8192 # 2g --> 16384 , 4g --> 8192 , 8g --> 4096, 16g --> 2048
+    tau = 0.98
 
+    imu = IMU(gyroScaleFactor, accScaleFactor)
+    imu.calibrateGyro(s, numCalibrationPoints)
 
+    rollArray = []
+    pitchArray = []
+    yawArray = []
 
-    w_x, w_y, w_z, a_x, a_y, a_z = sensorRead(s, gyro_x_cal, gyro_y_cal, gyro_z_cal, scaleFactorGyro, scaleFactorAcc)
-    roll, pitch, dtTimer = compFilter(w_x, w_y, w_z, a_x, a_y, a_z, roll, pitch, dtTimer, tau)
+    while(time.time() < 10):
+        imu.compFilter(s, 0.98)
+        print(imu.roll, imu.pitch, imu.yaw)
 
+        rollArray.append(imu.roll)
+        pitchArray.append(imu.pitch)
+        yawArray.append(imu.yaw)
 
-    #
-    # dataPoints = 2000 # Change to time... Same with x axis
-    #
-    # for ii in range(dataPoints):
-    #     rawData = s.getSerialData()
-    #
-    #
-    #     print(data, ii)
-    #
-    #     pitch.append(data[0])
-    #     gyroPitch.append(data[1])
-    #     accPitch.append(data[2])
-    #     freq.append(data[3])
-    #
-    # print('Average frequency was: ' + str(round(mean(freq),2)) + ' Hz')
-    #
-    # x = np.arange(len(pitch))
-    #
-    # plt.plot(x,pitch,'-k',linewidth=3,label='Complementary Filter')
-    # plt.plot(x,gyroPitch,'-g',linewidth=1,label='Gyroscope Angle')
-    # plt.plot(x,accPitch,'-b',linewidth=1,label='Accelerometer Angle')
-    #
-    # plt.xlabel('Iteration Index')
-    # plt.ylabel('Angle (deg)')
-    # plt.legend(loc='upper left')
+    x = np.arange(len(pitch))
+
+    plt.plot(x,rollArray,'-k',linewidth=3,label='Roll')
+    plt.plot(x,pitchArray,'-g',linewidth=1,label='Pitch')
+    plt.plot(x,yawArray,'-b',linewidth=1,label='Yaw')
+
+    plt.xlabel('Iteration Index')
+    plt.ylabel('Angle (deg)')
+    plt.legend(loc='upper left')
+    plt.show()
 
     s.close()
-    # plt.show()
 
 
 if __name__ == '__main__':
