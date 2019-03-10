@@ -31,7 +31,7 @@ void loop() {
   readMPU6050();
 
   // Send raw values to Python
-  writeBytes(&acc_x, &acc_y, &acc_z, &gyro_x, &gyro_y, &gyro_z);
+  writeBytes(&gyro_x, &gyro_y, &gyro_z, &acc_x, &acc_y, &acc_z);
 }
 
 
