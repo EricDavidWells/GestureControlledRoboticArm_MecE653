@@ -5,6 +5,7 @@ import serial
 import time
 import struct
 import copy
+import math
 
 
 class DAQ:
@@ -107,24 +108,26 @@ def sensorRead(s, gyro_x_cal, gyro_y_cal, gyro_z_cal, scaleFactorGyro, scaleFact
     return w_x, w_y, w_z, a_x, a_y, a_z
 
 
-# def compFilter(tau):
-#
-#
-#     freq = 1/((micros() - dtTimer) * 1e-6);
-#     dtTimer = micros();
-#     dt = 1/freq;
-#
-#
-#     // Complementary filter
-#     accelPitch = atan2(a_y, a_z) * RAD_TO_DEG;
-#     accelRoll = atan2(a_x, a_z) * RAD_TO_DEG;
-#
-#     pitch = (tau)*(pitch + w_x*dt) + (1-tau)*(accelPitch);
-#     roll = (tau)*(roll - w_y*dt) + (1-tau)*(accelRoll);
-#
-#     gyroPitch += w_x*dt;
-#     gyroRoll -= w_y*dt;
-#     gyroYaw += w_z*dt;
+def compFilter(w_x, w_y, w_z, a_x, a_y, a_z, roll, pitch, dtTimer, tau):
+
+    # Get delta time
+    dt = time.time() - dtTimer
+    dtTimer = time.time()
+
+    # Acceleration vector angle
+    accPitch = math.degrees(atan2(a_y, a_z))
+    accRoll = math.degrees(atan2(a_x, a_z))
+
+    # Gyro integration angle
+    gyroPitch += w_x * dt
+    gyroRoll -= w_y * dt
+    gyroYaw += w_z * dt
+
+    # Comp filter
+    roll = (tau)*(roll - w_y*dt) + (1-tau)*(accRoll);
+    pitch = (tau)*(pitch + w_x*dt) + (1-tau)*(accPitch);
+
+    return roll, pitch, dtTimer
 
 
 def main():
@@ -133,10 +136,13 @@ def main():
     dataNumBytes = 2
     numSignals = 4
 
-    numCalibrationPoints = 1000;
+    numCalibrationPoints = 1000
 
-    scaleFactorGyro = 65.5; # 250 deg/s --> 131, 500 deg/s --> 65.5, 1000 deg/s --> 32.8, 2000 deg/s --> 16.4
-    scaleFactorAcc = 8192; # 2g --> 16384 , 4g --> 8192 , 8g --> 4096, 16g --> 2048
+    scaleFactorGyro = 65.5 # 250 deg/s --> 131, 500 deg/s --> 65.5, 1000 deg/s --> 32.8, 2000 deg/s --> 16.4
+    scaleFactorAcc = 8192 # 2g --> 16384 , 4g --> 8192 , 8g --> 4096, 16g --> 2048
+    dtTimer = 0
+    roll = 0
+    pitch = 0
 
     tau = 0.98
 
@@ -144,7 +150,12 @@ def main():
     s.readSerialStart()
 
     gyro_x_cal, gyro_y_cal, gyro_z_cal = calibrateGyro(s,numCalibrationPoints)
+
+
+
     w_x, w_y, w_z, a_x, a_y, a_z = sensorRead(s, gyro_x_cal, gyro_y_cal, gyro_z_cal, scaleFactorGyro, scaleFactorAcc)
+    roll, pitch, dtTimer = compFilter(w_x, w_y, w_z, a_x, a_y, a_z, roll, pitch, dtTimer, tau)
+
 
     #
     # dataPoints = 2000 # Change to time... Same with x axis
@@ -157,7 +168,7 @@ def main():
     #
     #     pitch.append(data[0])
     #     gyroPitch.append(data[1])
-    #     accelPitch.append(data[2])
+    #     accPitch.append(data[2])
     #     freq.append(data[3])
     #
     # print('Average frequency was: ' + str(round(mean(freq),2)) + ' Hz')
@@ -166,7 +177,7 @@ def main():
     #
     # plt.plot(x,pitch,'-k',linewidth=3,label='Complementary Filter')
     # plt.plot(x,gyroPitch,'-g',linewidth=1,label='Gyroscope Angle')
-    # plt.plot(x,accelPitch,'-b',linewidth=1,label='Accelerometer Angle')
+    # plt.plot(x,accPitch,'-b',linewidth=1,label='Accelerometer Angle')
     #
     # plt.xlabel('Iteration Index')
     # plt.ylabel('Angle (deg)')
