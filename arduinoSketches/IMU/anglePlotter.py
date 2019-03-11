@@ -1,4 +1,3 @@
-from statistics import mean
 import matplotlib.pyplot as plt
 import numpy as np
 import serial
@@ -8,8 +7,10 @@ import copy
 import math
 
 
+
 class DAQ:
     def __init__(self, serialPort, serialBaud, dataNumBytes, numSignals):
+        # Class / object / constructor setup
         self.port = serialPort
         self.baud = serialBaud
         self.dataNumBytes = dataNumBytes
@@ -20,10 +21,7 @@ class DAQ:
         if dataNumBytes == 2:
             self.dataType = 'h'
 
-        self.data = []
-        for i in range(numSignals):
-            self.data.append([0])
-
+        # Connect to serial port
         print('Trying to connect to: ' + str(serialPort) + ' at ' + str(serialBaud) + ' BAUD.')
         try:
             self.serialConnection = serial.Serial(serialPort, serialBaud, timeout=4)
@@ -32,48 +30,64 @@ class DAQ:
             print("Failed to connect with " + str(serialPort) + ' at ' + str(serialBaud) + ' BAUD.')
 
     def readSerialStart(self):
+        # Pause and clear buffer to start with a good connection
         time.sleep(2)
         self.serialConnection.reset_input_buffer()
 
     def getSerialData(self):
+        # Check for header bytes and then read bytearray if header satisfied
         if (struct.unpack('B', self.serialConnection.read())[0] is 0x9F) and (struct.unpack('B', self.serialConnection.read())[0] is 0x6E):
             self.rawData = self.serialConnection.read(self.numSignals * self.dataNumBytes)
 
+            # Copy raw data to new variable and set up the data out variable
             privateData = copy.deepcopy(self.rawData[:])
-            temp = []
-            for i in range(self.numSignals):
-                data = privateData[(i*self.dataNumBytes):(self.dataNumBytes + i*self.dataNumBytes)]
-                value,  = struct.unpack(self.dataType, data)
-                self.data[i].append(value)
-                temp.append(value)
+            dataOut = []
 
+            # Loop through all the signals and decode the values to decimal
+            for ii in range(self.numSignals):
+                data = privateData[(ii*self.dataNumBytes):(self.dataNumBytes + ii*self.dataNumBytes)]
+                value, = struct.unpack(self.dataType, data)
+                dataOut.append(value)
+
+        # Check if data is usable otherwise repeat (recursive function)
         try:
-            if temp:
-                return temp
+            if dataOut:
+                return dataOut
         except:
             return self.getSerialData()
 
     def close(self):
+        # Close the serial port connection
         self.serialConnection.close()
         print('Disconnected...')
 
 
+
 class IMU:
     def __init__(self, gyroScaleFactor, accScaleFactor):
+        # Class / object / constructor setup
         self.gyroScaleFactor = gyroScaleFactor
         self.accScaleFactor = accScaleFactor
 
         self.gx = None; self.gy = None; self.gz = None;
         self.ax = None; self.ay = None; self.az = None;
 
-        self.gyroXcal = 0; self.gyroYcal = 0; self.gyroZcal = 0;
+        self.gyroXcal = 0
+        self.gyroYcal = 0
+        self.gyroZcal = 0
 
-        self.gyroRoll = 0; self.gyroPitch = 0; self.gyroYaw = 0;
-        self.roll = 0;     self.pitch = 0;     self.yaw = 0;
+        self.gyroRoll = 0
+        self.gyroPitch = 0
+        self.gyroYaw = 0
+
+        self.roll = 0
+        self.pitch = 0
+        self.yaw = 0
 
         self.dtTimer = 0
 
     def getRawIMUvalues(self, s):
+        # Get raw values from IMU from serial connection
         val = s.getSerialData()
         self.gx = val[0]
         self.gy = val[1]
@@ -103,7 +117,7 @@ class IMU:
         self.dtTimer = time.time()
 
     def processIMUvalues(self,s):
-        # Get data
+        # Get raw data
         self.getRawIMUvalues(s)
 
         # Subtract the offset calibration values
@@ -144,8 +158,10 @@ class IMU:
         self.pitch = (tau)*(self.pitch + self.gx*dt) + (1-tau)*(accPitch)
 
 
+
 def main():
-    portName = '/dev/cu.wchusbserial1410'
+    # Set up serial connection
+    portName = 'COM10' #/dev/cu.wchusbserial1410
     baudRate = 115200
     dataNumBytes = 2
     numSignals = 6
@@ -153,39 +169,46 @@ def main():
     s = DAQ(portName, baudRate, dataNumBytes, numSignals)
     s.readSerialStart()
 
+    # Set up IMU processing
     numCalibrationPoints = 500
-    gyroScaleFactor = 65.5 # 250 deg/s --> 131, 500 deg/s --> 65.5, 1000 deg/s --> 32.8, 2000 deg/s --> 16.4
-    accScaleFactor = 8192 # 2g --> 16384 , 4g --> 8192 , 8g --> 4096, 16g --> 2048
+    gyroScaleFactor = 65.5
+    accScaleFactor = 8192.0
     tau = 0.98
 
     imu = IMU(gyroScaleFactor, accScaleFactor)
     imu.calibrateGyro(s, numCalibrationPoints)
 
+    # Start timer and store data in array
+    startTime = time.time()
+    t = []
     rollArray = []
     pitchArray = []
     yawArray = []
 
-    # while(time.time() > 20):
-    for ii in range(1000):
+    # Run for __ seconds
+    while(time.time() < (startTime + 7)):
         imu.compFilter(s, 0.98)
         print(imu.roll, imu.pitch, imu.yaw)
 
+        t.append(time.time() - startTime)
         rollArray.append(imu.roll)
         pitchArray.append(imu.pitch)
         yawArray.append(imu.yaw)
 
-    x = np.arange(len(rollArray))
+    # Plot data
+    plt.plot(t,rollArray,'-r',linewidth=1,label='Roll')
+    plt.plot(t,pitchArray,'-g',linewidth=1,label='Pitch')
+    plt.plot(t,yawArray,'-b',linewidth=1,label='Yaw')
 
-    plt.plot(x,rollArray,'-r',linewidth=1,label='Roll')
-    plt.plot(x,pitchArray,'-g',linewidth=1,label='Pitch')
-    plt.plot(x,yawArray,'-b',linewidth=1,label='Yaw')
-
-    plt.xlabel('Iteration Index')
+    plt.xlabel('Time (s)')
     plt.ylabel('Angle (deg)')
     plt.legend(loc='upper left')
+    plt.gcf().autofmt_xdate()
     plt.show()
 
+    # Close serial connection
     s.close()
+
 
 
 if __name__ == '__main__':
