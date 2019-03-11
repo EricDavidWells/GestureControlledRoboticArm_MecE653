@@ -44,8 +44,8 @@ class DAQ:
             dataOut = []
 
             # Loop through all the signals and decode the values to decimal
-            for ii in range(self.numSignals):
-                data = privateData[(ii*self.dataNumBytes):(self.dataNumBytes + ii*self.dataNumBytes)]
+            for i in range(self.numSignals):
+                data = privateData[(i*self.dataNumBytes):(self.dataNumBytes + i*self.dataNumBytes)]
                 value, = struct.unpack(self.dataType, data)
                 dataOut.append(value)
 
@@ -63,11 +63,14 @@ class DAQ:
 
 
 
-class IMU:
-    def __init__(self, gyroScaleFactor, accScaleFactor):
+class Sensors:
+    def __init__(self, gyroScaleFactor, accScaleFactor, VCC, Resistor, tau):
         # Class / object / constructor setup
         self.gyroScaleFactor = gyroScaleFactor
         self.accScaleFactor = accScaleFactor
+        self.VCC = VCC
+        self.Resistor = Resistor
+        self.tau = tau
 
         self.gx = None; self.gy = None; self.gz = None;
         self.ax = None; self.ay = None; self.az = None;
@@ -86,8 +89,11 @@ class IMU:
 
         self.dtTimer = 0
 
-    def getRawIMUvalues(self, s):
-        # Get raw values from IMU from serial connection
+        self.FSRvalues = []
+        self.force = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+    def getRawSensorValues(self, s):
+        # Get raw values from serial connection
         val = s.getSerialData()
         self.gx = val[0]
         self.gy = val[1]
@@ -95,6 +101,7 @@ class IMU:
         self.ax = val[3]
         self.ay = val[4]
         self.az = val[5]
+        self.FSRvalues = [val[6], val[7], val[8], val[9], val[10], val[11], val[12], val[13]]
 
     def calibrateGyro(self, s, N):
         # Display message
@@ -102,7 +109,7 @@ class IMU:
 
         # Take N readings for each coordinate and add to itself
         for ii in range(N):
-            self.getRawIMUvalues(s)
+            self.getRawSensorValues(s)
             self.gyroXcal += self.gx
             self.gyroYcal += self.gy
             self.gyroZcal += self.gz
@@ -116,10 +123,7 @@ class IMU:
         print("Calibration complete")
         self.dtTimer = time.time()
 
-    def processIMUvalues(self,s):
-        # Get raw data
-        self.getRawIMUvalues(s)
-
+    def processIMUvalues(self):
         # Subtract the offset calibration values
         self.gx -= self.gyroXcal
         self.gy -= self.gyroYcal
@@ -135,9 +139,9 @@ class IMU:
         self.ay = self.ay / self.accScaleFactor
         self.az = self.az / self.accScaleFactor
 
-    def compFilter(self, s, tau):
+    def compFilter(self):
         # Get the processed values from IMU
-        self.processIMUvalues(s)
+        self.processIMUvalues()
 
         # Get delta time and record time for next call
         dt = time.time() - self.dtTimer
@@ -154,8 +158,42 @@ class IMU:
         self.yaw = self.gyroYaw
 
         # Comp filter
-        self.roll = (tau)*(self.roll - self.gy*dt) + (1-tau)*(accRoll)
-        self.pitch = (tau)*(self.pitch + self.gx*dt) + (1-tau)*(accPitch)
+        self.roll = (self.tau)*(self.roll - self.gy*dt) + (1-self.tau)*(accRoll)
+        self.pitch = (self.tau)*(self.pitch + self.gx*dt) + (1-self.tau)*(accPitch)
+
+    def processFSRvalues(self):
+        # Loop through all values
+        for ii in range(len(self.FSRvalues)):
+            # Analog value to voltage
+            fsrV = self.FSRvalues[ii] * self.VCC / 1023.0
+
+            # Use voltage and static resistor value to calculate FSR resistance
+            try:
+                fsrR = ((self.VCC - fsrV) * self.Resistor) / fsrV
+            except:
+                fsrR = 1e6
+
+            # Guesstimate force based on slopes in figure 3 of FSR datasheet (conductance)
+            fsrG = 1.0 / fsrR
+
+            # Break parabolic curve down into two linear slopes
+            if (fsrR <= 600):
+                self.force[ii] = (fsrG - 0.00075) / 0.00000032639
+            else:
+                self.force[ii] =  fsrG / 0.000000642857
+
+        # Write the last entry of force to be the average value
+        self.force[8] = np.mean(self.force)
+
+    def getData(self,s):
+        # Get data from serial
+        self.getRawSensorValues(s)
+
+        # Process IMU values
+        self.compFilter()
+
+        # Process FSR values
+        self.processFSRvalues()
 
 
 
@@ -164,47 +202,30 @@ def main():
     portName = 'COM10' #/dev/cu.wchusbserial1410
     baudRate = 115200
     dataNumBytes = 2
-    numSignals = 6
+    numSignals = 14
 
     s = DAQ(portName, baudRate, dataNumBytes, numSignals)
     s.readSerialStart()
 
-    # Set up IMU processing
+    # Set up sensors
     numCalibrationPoints = 500
     gyroScaleFactor = 65.5
     accScaleFactor = 8192.0
+    VCC = 4.98
+    Resistor = 5100.0
     tau = 0.98
 
-    imu = IMU(gyroScaleFactor, accScaleFactor)
-    imu.calibrateGyro(s, numCalibrationPoints)
-
-    # Start timer and store data in array
-    startTime = time.time()
-    t = []
-    rollArray = []
-    pitchArray = []
-    yawArray = []
+    data = Sensors(gyroScaleFactor, accScaleFactor, VCC, Resistor, tau)
+    data.calibrateGyro(s, numCalibrationPoints)
 
     # Run for __ seconds
+    startTime = time.time()
+
     while(time.time() < (startTime + 7)):
-        imu.compFilter(s, 0.98)
-        print(imu.roll, imu.pitch, imu.yaw)
-
-        t.append(time.time() - startTime)
-        rollArray.append(imu.roll)
-        pitchArray.append(imu.pitch)
-        yawArray.append(imu.yaw)
-
-    # Plot data
-    plt.plot(t,rollArray,'-r',linewidth=1,label='Roll')
-    plt.plot(t,pitchArray,'-g',linewidth=1,label='Pitch')
-    plt.plot(t,yawArray,'-b',linewidth=1,label='Yaw')
-
-    plt.xlabel('Time (s)')
-    plt.ylabel('Angle (deg)')
-    plt.legend(loc='upper left')
-    plt.gcf().autofmt_xdate()
-    plt.show()
+        data.getData(s)
+        print("Roll/Pitch/Yaw: ", data.roll, data.pitch, data.yaw)
+        print("FSR's: ", data.force)
+        print()
 
     # Close serial connection
     s.close()
