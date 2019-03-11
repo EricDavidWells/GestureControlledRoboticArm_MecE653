@@ -18,6 +18,8 @@ class serialPlot:
         self.numSignals = numSignals
         self.rawData = bytearray(numSignals * dataNumBytes)
         self.dataType = None
+        self.VCC = 4.98
+        self.Resistor = 5100.0
 
         if dataNumBytes == 2:
             self.dataType = 'h'
@@ -56,9 +58,25 @@ class serialPlot:
         for i in range(self.numSignals):
             data = privateData[(i*self.dataNumBytes):(self.dataNumBytes + i*self.dataNumBytes)]
             value,  = struct.unpack(self.dataType, data)
+
+            fsrV = value * self.VCC / 1023.0
+
+            try:
+                fsrR = ((self.VCC - fsrV) * self.Resistor) / fsrV
+            except:
+                fsrR = 1e6
+
+            fsrG = 1.0 / fsrR
+
+            if (fsrR <= 600):
+                value = (fsrG - 0.00075) / 0.00000032639
+            else:
+                value =  fsrG / 0.000000642857
+
+
             self.data[i].append(value)
             lines[i].set_data(range(self.plotMaxLength), self.data[i])
-            lineValueText[i].set_text('[' + lineLabel[i] + '] = ' + str(value))
+            lineValueText[i].set_text('[' + lineLabel[i] + '] = ' + str(round(value)))
 
     def backgroundThread(self):
         time.sleep(2)
@@ -97,7 +115,7 @@ def main():
     ax = plt.axes(xlim=(xmin, xmax), ylim=(float(ymin - (ymax - ymin) / 10), float(ymax + (ymax - ymin) / 10)))
     ax.set_title("FSR Live Output",fontweight='bold',size=20)
     ax.set_xlabel("Time -->",fontweight='bold')
-    ax.set_ylabel("Raw Analog Out",fontweight='bold')
+    ax.set_ylabel("Force [g]",fontweight='bold')
 
     lineLabel = ['FSR1', 'FSR2', 'FSR3', 'FSR4', 'FSR5', 'FSR6', 'FSR7', 'FSR8']
     style = ['c-', 'm-', 'y-', '-k', '--c', '--m', '--y', '--k']
