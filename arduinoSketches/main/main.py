@@ -1,4 +1,3 @@
-from statistics import mean
 import matplotlib.pyplot as plt
 import numpy as np
 import serial
@@ -11,6 +10,7 @@ import math
 
 class DAQ:
     def __init__(self, serialPort, serialBaud, dataNumBytes, numSignals):
+        # Class / object / constructor setup
         self.port = serialPort
         self.baud = serialBaud
         self.dataNumBytes = dataNumBytes
@@ -21,10 +21,7 @@ class DAQ:
         if dataNumBytes == 2:
             self.dataType = 'h'
 
-        self.data = []
-        for i in range(numSignals):
-            self.data.append([0])
-
+        # Connect to serial port
         print('Trying to connect to: ' + str(serialPort) + ' at ' + str(serialBaud) + ' BAUD.')
         try:
             self.serialConnection = serial.Serial(serialPort, serialBaud, timeout=4)
@@ -33,28 +30,34 @@ class DAQ:
             print("Failed to connect with " + str(serialPort) + ' at ' + str(serialBaud) + ' BAUD.')
 
     def readSerialStart(self):
+        # Pause and clear buffer to start with a good connection
         time.sleep(2)
         self.serialConnection.reset_input_buffer()
 
     def getSerialData(self):
+        # Check for header bytes and then read bytearray if header satisfied
         if (struct.unpack('B', self.serialConnection.read())[0] is 0x9F) and (struct.unpack('B', self.serialConnection.read())[0] is 0x6E):
             self.rawData = self.serialConnection.read(self.numSignals * self.dataNumBytes)
 
+            # Copy raw data to new variable and set up the data out variable
             privateData = copy.deepcopy(self.rawData[:])
-            temp = []
+            dataOut = []
+
+            # Loop through all the signals and decode the values to decimal
             for i in range(self.numSignals):
                 data = privateData[(i*self.dataNumBytes):(self.dataNumBytes + i*self.dataNumBytes)]
-                value,  = struct.unpack(self.dataType, data)
-                self.data[i].append(value)
-                temp.append(value)
+                value, = struct.unpack(self.dataType, data)
+                dataOut.append(value)
 
+        # Check if data is usable otherwise repeat (recursive function)
         try:
-            if temp:
-                return temp
+            if dataOut:
+                return dataOut
         except:
             return self.getSerialData()
 
     def close(self):
+        # Close the serial port connection
         self.serialConnection.close()
         print('Disconnected...')
 
@@ -62,6 +65,7 @@ class DAQ:
 
 class Sensors:
     def __init__(self, gyroScaleFactor, accScaleFactor, VCC, Resistor, tau):
+        # Class / object / constructor setup
         self.gyroScaleFactor = gyroScaleFactor
         self.accScaleFactor = accScaleFactor
         self.VCC = VCC
@@ -89,6 +93,7 @@ class Sensors:
         self.force = [0, 0, 0, 0, 0, 0, 0, 0, 0]
 
     def getRawSensorValues(self, s):
+        # Get raw values from serial connection
         val = s.getSerialData()
         self.gx = val[0]
         self.gy = val[1]
@@ -193,7 +198,8 @@ class Sensors:
 
 
 def main():
-    portName = '/dev/cu.wchusbserial1410'
+    # Set up serial connection
+    portName = 'COM10' #/dev/cu.wchusbserial1410
     baudRate = 115200
     dataNumBytes = 2
     numSignals = 14
@@ -201,6 +207,7 @@ def main():
     s = DAQ(portName, baudRate, dataNumBytes, numSignals)
     s.readSerialStart()
 
+    # Set up sensors
     numCalibrationPoints = 500
     gyroScaleFactor = 65.5
     accScaleFactor = 8192.0
@@ -211,13 +218,18 @@ def main():
     data = Sensors(gyroScaleFactor, accScaleFactor, VCC, Resistor, tau)
     data.calibrateGyro(s, numCalibrationPoints)
 
-    for ii in range(2000):
+    # Run for __ seconds
+    startTime = time.time()
+
+    while(time.time() < (startTime + 7)):
         data.getData(s)
         print("Roll/Pitch/Yaw: ", data.roll, data.pitch, data.yaw)
         print("FSR's: ", data.force)
         print()
 
+    # Close serial connection
     s.close()
+
 
 
 if __name__ == '__main__':
