@@ -61,12 +61,12 @@ class DAQ:
 
 
 class Sensors:
-    def __init__(self, gyroScaleFactor, accScaleFactor, VCC, Resistor, Tau):
+    def __init__(self, gyroScaleFactor, accScaleFactor, VCC, Resistor, tau):
         self.gyroScaleFactor = gyroScaleFactor
         self.accScaleFactor = accScaleFactor
         self.VCC = VCC
         self.Resistor = Resistor
-        self.Tau = Tau
+        self.tau = tau
 
         self.gx = None; self.gy = None; self.gz = None;
         self.ax = None; self.ay = None; self.az = None;
@@ -86,7 +86,7 @@ class Sensors:
         self.dtTimer = 0
 
         self.FSRvalues = []
-        self.force = []
+        self.force = [0, 0, 0, 0, 0, 0, 0, 0, 0]
 
     def getRawSensorValues(self, s):
         val = s.getSerialData()
@@ -160,13 +160,16 @@ class Sensors:
         # Loop through all values
         for ii in range(len(self.FSRvalues)):
             # Analog value to voltage
-            fsrV = FSRvalues[ii] * self.VCC / 1023
+            fsrV = self.FSRvalues[ii] * self.VCC / 1023.0
 
             # Use voltage and static resistor value to calculate FSR resistance
-            fsrR = ((self.VCC - fsrV) * self.Resistor) / fsrV
+            try:
+                fsrR = ((self.VCC - fsrV) * self.Resistor) / fsrV
+            except:
+                fsrR = 1e6
 
             # Guesstimate force based on slopes in figure 3 of FSR datasheet (conductance)
-            fsrG = 1 / fsrR
+            fsrG = 1.0 / fsrR
 
             # Break parabolic curve down into two linear slopes
             if (fsrR <= 600):
@@ -175,7 +178,7 @@ class Sensors:
                 self.force[ii] =  fsrG / 0.000000642857
 
         # Write the last entry of force to be the average value
-        self.force[8] = np.mean(force)
+        self.force[8] = np.mean(self.force)
 
     def getData(self,s):
         # Get data from serial
@@ -200,18 +203,19 @@ def main():
 
     numCalibrationPoints = 500
     gyroScaleFactor = 65.5
-    accScaleFactor = 8192
+    accScaleFactor = 8192.0
     VCC = 4.98
-    Resistor = 5100
-    Tau = 0.98
+    Resistor = 5100.0
+    tau = 0.98
 
-    data = Sensors(gyroScaleFactor, accScaleFactor, VCC, Resistor, Tau)
+    data = Sensors(gyroScaleFactor, accScaleFactor, VCC, Resistor, tau)
     data.calibrateGyro(s, numCalibrationPoints)
 
-    for ii in range(1000):
+    for ii in range(2000):
         data.getData(s)
-        print(data.roll, data.pitch, data.yaw)
-        print(data.force)
+        print("Roll/Pitch/Yaw: ", data.roll, data.pitch, data.yaw)
+        print("FSR's: ", data.force)
+        print()
 
     s.close()
 
