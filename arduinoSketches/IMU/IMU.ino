@@ -107,7 +107,7 @@ void setupMPU6050() {
   // Wire.write; 2g --> 0x00, 4g --> 0x08, 8g --> 0x10, 16g --> 0x18
   Wire.beginTransmission(0x68);
   Wire.write(0x1C);
-  Wire.write(0x08);
+  Wire.write(0x00);
   Wire.endTransmission();
 
   // Configure the gyro (address 0x1B)
@@ -115,6 +115,6 @@ void setupMPU6050() {
   // 250 deg/s --> 0x00, 500 deg/s --> 0x08, 1000 deg/s --> 0x10, 2000 deg/s --> 0x18
   Wire.beginTransmission(0x68);
   Wire.write(0x1B);
-  Wire.write(0x08);
+  Wire.write(0x00);
   Wire.endTransmission();
 }

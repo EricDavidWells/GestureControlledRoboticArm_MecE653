@@ -126,14 +126,14 @@ class IMU:
         self.gz -= self.gyroZcal
 
         # Convert to instantaneous degrees per second
-        self.gx = self.gx / self.gyroScaleFactor
-        self.gy = self.gy / self.gyroScaleFactor
-        self.gz = self.gz / self.gyroScaleFactor
+        self.gx /= self.gyroScaleFactor
+        self.gy /= self.gyroScaleFactor
+        self.gz /= self.gyroScaleFactor
 
         # Convert to g force
-        self.ax = self.ax / self.accScaleFactor
-        self.ay = self.ay / self.accScaleFactor
-        self.az = self.az / self.accScaleFactor
+        self.ax /= self.accScaleFactor
+        self.ay /= self.accScaleFactor
+        self.az /= self.accScaleFactor
 
     def compFilter(self, s, tau):
         # Get the processed values from IMU
@@ -161,7 +161,7 @@ class IMU:
 
 def main():
     # Set up serial connection
-    portName = 'COM10' #/dev/cu.wchusbserial1410
+    portName = '/dev/cu.wchusbserial1410'
     baudRate = 115200
     dataNumBytes = 2
     numSignals = 6
@@ -171,8 +171,8 @@ def main():
 
     # Set up IMU processing
     numCalibrationPoints = 500
-    gyroScaleFactor = 65.5
-    accScaleFactor = 8192.0
+    gyroScaleFactor = 131.0
+    accScaleFactor = 16384.0
     tau = 0.98
 
     imu = IMU(gyroScaleFactor, accScaleFactor)

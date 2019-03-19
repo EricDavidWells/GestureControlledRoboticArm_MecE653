@@ -10,7 +10,6 @@ unsigned long timer = 0;
 long loopTimeMicroSec = 5000;
 
 
-
 void setup() {
   // Start I2C and serial port
   Wire.begin();
@@ -33,7 +32,6 @@ void setup() {
 }
 
 
-
 void loop() {
   // Stabilize sampling rate
   timeSync(loopTimeMicroSec);
@@ -53,7 +51,6 @@ void loop() {
 }
 
 
-
 void timeSync(unsigned long deltaT){
   // Calculate required delay to run at 200 Hz
   unsigned long currTime = micros();
@@ -70,7 +67,6 @@ void timeSync(unsigned long deltaT){
 }
 
 
-
 void selectMuxPin(byte pin){
   // Set the S0, S1, and S2 pins to yield Y0-Y7
   for (int i=0; i<3; i++){
@@ -80,7 +76,6 @@ void selectMuxPin(byte pin){
       digitalWrite(selectPins[i], LOW);
   }
 }
-
 
 
 void writeBytes(int* data1, int* data2, int* data3, int* data4, int* data5, int* data6,
@@ -108,7 +103,6 @@ void writeBytes(int* data1, int* data2, int* data3, int* data4, int* data5, int*
 }
 
 
-
 void readMPU6050() {
   //Subroutine for reading the raw data
   Wire.beginTransmission(0x68);
@@ -128,7 +122,6 @@ void readMPU6050() {
 }
 
 
-
 void setupMPU6050() {
   //Activate the MPU-6050
   Wire.beginTransmission(0x68);
@@ -136,19 +129,17 @@ void setupMPU6050() {
   Wire.write(0x00);
   Wire.endTransmission();
 
-  // Configure the accelerometer (address 0x1C)
-  // Set full scale range, Wire.write(0x__);
-  // Wire.write; 2g --> 0x00, 4g --> 0x08, 8g --> 0x10, 16g --> 0x18
+  // Configure the accelerometer
+  // 2g --> 0x00, 4g --> 0x08, 8g --> 0x10, 16g --> 0x18
   Wire.beginTransmission(0x68);
   Wire.write(0x1C);
-  Wire.write(0x08);
+  Wire.write(0x00);
   Wire.endTransmission();
 
-  // Configure the gyro (address 0x1B)
-  // Set full scale range, Wire.write(0x__);
+  // Configure the gyro
   // 250 deg/s --> 0x00, 500 deg/s --> 0x08, 1000 deg/s --> 0x10, 2000 deg/s --> 0x18
   Wire.beginTransmission(0x68);
   Wire.write(0x1B);
-  Wire.write(0x08);
+  Wire.write(0x00);
   Wire.endTransmission();
 }
