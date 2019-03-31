@@ -2,7 +2,8 @@
 const int selectPins[3] = {2, 3, 4};
 unsigned long timer = 0;
 long loopTimeMicroSec = 5000;
-int FSR[8];
+int FSR[11];
+double avgFSR = 0;
 
 
 void setup(){
@@ -34,8 +35,21 @@ void loop(){
     FSR[pin] = analogRead(A0);
   }
 
-  // Send raw values to Python
-  writeBytes(&FSR[0], &FSR[1], &FSR[2], &FSR[3], &FSR[4], &FSR[5], &FSR[6], &FSR[7]);
+  FSR[8] = analogRead(A1);
+  FSR[9] = analogRead(A2);
+  FSR[10] = analogRead(A3);
+
+//  // Send raw values to Python
+//  writeBytes(&FSR[0], &FSR[1], &FSR[2], &FSR[3], &FSR[4], &FSR[5], &FSR[6], &FSR[7]);
+
+  // Send raw values to serial port
+  for (int i=0; i<11; i++){
+    Serial.print(FSR[i]); Serial.print(",");
+    avgFSR += FSR[i];
+  }
+  Serial.println(avgFSR/11);
+  avgFSR = 0;
+
 }
 
 
