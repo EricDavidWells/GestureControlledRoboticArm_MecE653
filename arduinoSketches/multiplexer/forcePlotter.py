@@ -62,6 +62,8 @@ class serialPlot:
 
         # Copy raw data to new private variable and loop through signals
         privateData = copy.deepcopy(self.rawData[:])
+
+
         for i in range(self.numSignals):
             data = privateData[(i*self.dataNumBytes):(self.dataNumBytes + i*self.dataNumBytes)]
             value,  = struct.unpack(self.dataType, data)
@@ -99,6 +101,9 @@ class serialPlot:
             if (struct.unpack('B', self.serialConnection.read())[0] is 0x9F) and (struct.unpack('B', self.serialConnection.read())[0] is 0x6E):
                 self.rawData = self.serialConnection.read(self.numSignals * self.dataNumBytes)
                 self.isReceiving = True
+                # Check the footer to make guesstimate if any bytes were lost in transmission
+                if (not (struct.unpack('B', self.serialConnection.read())[0] is 0xAE)) and (not (struct.unpack('B', self.serialConnection.read())[0] is 0x72)):
+                    self.rawData = bytearray(self.numSignals * self.dataNumBytes)
 
     def close(self):
         # Close the serial port connection and join threads
@@ -111,11 +116,11 @@ class serialPlot:
 
 def main():
     # Set up serial connection
-    portName = 'COM10' #/dev/cu.wchusbserial1410
+    portName = '/dev/cu.MECE653-DevB'
     baudRate = 115200
     maxPlotLength = 100
     dataNumBytes = 2
-    numSignals = 8
+    numSignals = 11
 
     s = serialPlot(portName, baudRate, maxPlotLength, dataNumBytes, numSignals)
     s.readSerialStart()
@@ -132,9 +137,9 @@ def main():
     ax = plt.axes(xlim=(xmin, xmax), ylim=(float(ymin - (ymax - ymin) / 10), float(ymax + (ymax - ymin) / 10)))
     ax.set_title("FSR Live Output",fontweight='bold',size=20)
     ax.set_xlabel("Time -->",fontweight='bold')
-    ax.set_ylabel("Force [g]",fontweight='bold')
-    lineLabel = ['FSR1', 'FSR2', 'FSR3', 'FSR4', 'FSR5', 'FSR6', 'FSR7', 'FSR8']
-    style = ['c-', 'm-', 'y-', '-k', '--c', '--m', '--y', '--k']
+    ax.set_ylabel("Force [grams]",fontweight='bold')
+    lineLabel = ['FSR1', 'FSR2', 'FSR3', 'FSR4', 'FSR5', 'FSR6', 'FSR7', 'FSR8', 'FSR9', 'FSR10', 'FSR11']
+    style = ['c-', 'm-', 'y-', '-k', '--c', '--m', '--y', '--k', ':c', ':m', ':y']
     timeText = ax.text(0.80, 0.95, '', transform=ax.transAxes)
 
     # Plot values and update the animation
