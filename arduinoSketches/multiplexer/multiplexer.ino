@@ -6,6 +6,7 @@ int FSR[11];
 double avgFSR = 0;
 
 
+
 void setup(){
   // Start serial
   Serial.begin(115200);
@@ -39,16 +40,16 @@ void loop(){
   FSR[9] = analogRead(A2);
   FSR[10] = analogRead(A3);
 
-//  // Send raw values to Python
-//  writeBytes(&FSR[0], &FSR[1], &FSR[2], &FSR[3], &FSR[4], &FSR[5], &FSR[6], &FSR[7]);
+  // Send raw values to Python
+  writeBytes(&FSR[0], &FSR[1], &FSR[2], &FSR[3], &FSR[4], &FSR[5], &FSR[6], &FSR[7], &FSR[8], &FSR[9], &FSR[10]);
 
-  // Send raw values to serial port
-  for (int i=0; i<11; i++){
-    Serial.print(FSR[i]); Serial.print(",");
-    avgFSR += FSR[i];
-  }
-  Serial.println(avgFSR/11);
-  avgFSR = 0;
+  // // Send raw values to serial port
+  // for (int i=0; i<11; i++){
+  //   Serial.print(FSR[i]); Serial.print(",");
+  //   avgFSR += FSR[i];
+  // }
+  // Serial.println(avgFSR/11);
+  // avgFSR = 0;
 
 }
 
@@ -83,7 +84,7 @@ void timeSync(unsigned long deltaT){
 
 
 
-void writeBytes(int* data1, int* data2, int* data3, int* data4, int* data5, int* data6, int* data7, int* data8){
+void writeBytes(int* data1, int* data2, int* data3, int* data4, int* data5, int* data6, int* data7, int* data8, int* data9, int* data10, int* data11){
   // Cast to a byte pointer
   byte* byteData1 = (byte*)(data1);
   byte* byteData2 = (byte*)(data2);
@@ -93,9 +94,12 @@ void writeBytes(int* data1, int* data2, int* data3, int* data4, int* data5, int*
   byte* byteData6 = (byte*)(data6);
   byte* byteData7 = (byte*)(data7);
   byte* byteData8 = (byte*)(data8);
+  byte* byteData9 = (byte*)(data9);
+  byte* byteData10 = (byte*)(data10);
+  byte* byteData11 = (byte*)(data11);
 
   // Byte array with header for transmission
-  byte buf[18] = {0x9F, 0x6E,
+  byte buf[26] = {0x9F, 0x6E,
                  byteData1[0], byteData1[1],
                  byteData2[0], byteData2[1],
                  byteData3[0], byteData3[1],
@@ -103,6 +107,10 @@ void writeBytes(int* data1, int* data2, int* data3, int* data4, int* data5, int*
                  byteData5[0], byteData5[1],
                  byteData6[0], byteData6[1],
                  byteData7[0], byteData7[1],
-                 byteData8[0], byteData8[1]};
-  Serial.write(buf, 18);
+                 byteData8[0], byteData8[1],
+                 byteData9[0], byteData9[1],
+                 byteData10[0], byteData10[1],
+                 byteData11[0], byteData11[1],
+                 0xAE, 0x72};
+  Serial.write(buf, 26);
 }
