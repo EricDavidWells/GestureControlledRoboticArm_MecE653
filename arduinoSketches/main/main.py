@@ -52,7 +52,8 @@ class DAQ:
         # Check if data is usable otherwise repeat (recursive function)
         try:
             if dataOut:
-                return dataOut
+                if (struct.unpack('B', self.serialConnection.read())[0] is 0xAE) and (struct.unpack('B', self.serialConnection.read())[0] is 0x72):
+                    return dataOut
         except:
             return self.getSerialData()
 
@@ -90,7 +91,7 @@ class Sensors:
         self.dtTimer = 0
 
         self.FSRvalues = []
-        self.force = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+        self.force = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
     def getRawSensorValues(self, s):
         # Get raw values from serial connection
@@ -101,7 +102,7 @@ class Sensors:
         self.ax = val[3]
         self.ay = val[4]
         self.az = val[5]
-        self.FSRvalues = [val[6], val[7], val[8], val[9], val[10], val[11], val[12], val[13]]
+        self.FSRvalues = [val[6], val[7], val[8], val[9], val[10], val[11], val[12], val[13], val[14], val[15], val[16]]
 
     def calibrateGyro(self, s, N):
         # Display message
@@ -183,7 +184,7 @@ class Sensors:
                 self.force[ii] =  fsrG / 0.000000642857
 
         # Write the last entry of force to be the average value
-        self.force[8] = np.mean(self.force)
+        self.force[11] = np.mean(self.force)
 
     def getData(self,s):
         # Get data from serial
@@ -199,10 +200,10 @@ class Sensors:
 
 def main():
     # Set up serial connection
-    portName = '/dev/cu.wchusbserial1410'
+    portName = '/dev/cu.MECE653-DevB'
     baudRate = 115200
     dataNumBytes = 2
-    numSignals = 14
+    numSignals = 17
 
     s = DAQ(portName, baudRate, dataNumBytes, numSignals)
     s.readSerialStart()
@@ -221,7 +222,7 @@ def main():
     # Run for __ seconds
     startTime = time.time()
 
-    while(time.time() < (startTime + 7)):
+    while(time.time() < (startTime + 10)):
         data.getData(s)
         print("Roll/Pitch/Yaw: ", data.roll, data.pitch, data.yaw)
         print("FSR's: ", data.force)
