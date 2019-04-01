@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import serial
 import time
@@ -200,7 +199,7 @@ class Sensors:
 
 def main():
     # Set up serial connection
-    portName = '/dev/cu.MECE653-DevB'
+    portName = '/dev/rfcomm0' # /dev/cu.MECE653-DevB
     baudRate = 115200
     dataNumBytes = 2
     numSignals = 17
