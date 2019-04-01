@@ -1,7 +1,9 @@
 # Raspberry Pi 3B+ and HC-05 Set Up and Pairing
 
 ## Intro
-The initial setup took a couple of hours of fiddling around with different methods and packages. The final working version was heavily based on u/Illmatic-Herbicide's (post on reddit)[[https://www.reddit.com/r/raspberry_pi/comments/6nchaj/guide_how_to_establish_bluetooth_serial/], however a few steps and other minor additions were made which are documented below.
+The initial setup took a couple of hours of fiddling around with different methods and packages. The final working version was heavily based on u/Illmatic-Herbicide's [post on reddit](https://www.reddit.com/r/raspberry_pi/comments/6nchaj/guide_how_to_establish_bluetooth_serial/), however a few steps and other minor additions were made which are documented below.
+
+The `bluetoothConfig.ino` is for setting up the HC-05 baud rate, name, etc... using AT commands. Doccumentation can be found at the begging of the sketch for proper connections, commands, etc...
 
 ## Notes
 * This is specifically a headless approach and it is assumed the user has SSH'd into their Pi.
@@ -27,19 +29,17 @@ The next 2 commands will accomplish:
 1. Turn on RPi bluetooth if its not already
 2. Scan for devices
 ```
-[bluetooth]#  scan on
-    ...
-    98:D3:71:FD:61:63	MECE653
-    ...
+[bluetooth]# power on
+[bluetooth]# scan on
 ```
 After waiting for a few seconds the device should be found. For example mine looked similar to this:
 ```
-…
-[CHG] Device 98:D3:71:FD:61:63 Name: MECE653
-help
-…
+[bluetooth]#  scan on
+    ...
+    Device 98:D3:71:FD:61:63 Name: MECE653
+    ...
 ```
-The unique address `98:D3:71:FD:61:63` is equal to <dev> below. Set <dev> to your devices address in the remaining steps if different. Again, it will be in the form of XX:XX:XX:XX:XX:XX.
+The unique address `98:D3:71:FD:61:63` is equal to `<dev>` below. Set `<dev>` to your devices address in the remaining steps if different. Again, `<dev>` will be in the form of XX:XX:XX:XX:XX:XX.
 
 Once your specific device has been found enter the remaining commands which do the following:
 1. Stop scanning for devices
@@ -55,10 +55,9 @@ Once your specific device has been found enter the remaining commands which do t
 [bluetooth]# trust <dev>
 [bluetooth]# connect <dev>
 [bluetooth]# info <dev>
-
 ```
 
-Edit the file using `sudo ratom /etc/systemd/system/dbus-org.bluez.service` and add "-C" to the **ExecStart** line and **ExecStartPost=/usr/bin/sdptool add SP** below it. The file will look something like this:
+Edit the following file using `sudo ratom /etc/systemd/system/dbus-org.bluez.service` and add "-C" to the **ExecStart** line. Then add a new line directly below it and copy and paste **ExecStartPost=/usr/bin/sdptool add SP**. The file will look something like this:
 
 ```
 ...
