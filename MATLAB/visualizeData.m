@@ -14,7 +14,7 @@ function [g] = visualizeData(data, numclass)
         PCAX{i} = X{i}*pcacoeff;
     end
     
-    outputlabels = {'Rest', 'Up', 'Down', 'Squeeze', 'Left', 'Right', 'Supination', 'Pronation'};
+    outputlabels = {'Rest', 'Extension', 'Flexion', 'Fist', 'Left', 'Right', 'Supination', 'Pronation'};
     figure(1)
     scatter3(PCAX{1}(:,1), PCAX{1}(:,2), PCAX{1}(:,3), 'o')
     hold on
@@ -23,14 +23,19 @@ function [g] = visualizeData(data, numclass)
     end
     grid on
     legend(outputlabels)
-
-    labels = {'FSR 1', 'FSR 2', 'FSR 3', 'FSR 4', 'FSR 5', 'FSR 6', 'FSR 7', 'FSR 8', 'mean'};
+    xlabel("PCA 1")
+    ylabel("PCA 2")
+    zlabel("PCA 3")
+    title("3 Dimensional PCA Analysis of FSR Data")
+    
+    labels = {'FSR 1', 'FSR 2', 'FSR 3', 'FSR 4', 'FSR 5', 'FSR 6', 'FSR 7', 'FSR 8'};
     figure(2)
 
-    for ii = 1:length(data(:,10))
-        name{ii,1} = outputlabels{data(ii,10)+1};
+    for ii = 1:length(data(:,9))
+        name{ii,1} = outputlabels{data(ii,9)+1};
     end
 
-    parallelcoords(data(:,1:9),'Group',name,'Labels',labels)
-
+    parallelcoords(data(:,1:8),'Group',name,'Labels',labels)
+    title("Parallel Coordinate Plot of FSR Data")
+    
 end
