@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import serial
 import time
 import struct
@@ -199,7 +200,7 @@ class Sensors:
 
 def main():
     # Set up serial connection
-    portName = '/dev/rfcomm0' # /dev/cu.MECE653-DevB
+    portName = '/dev/cu.MECE653-DevB' # /dev/rfcomm0
     baudRate = 115200
     dataNumBytes = 2
     numSignals = 17
@@ -218,17 +219,25 @@ def main():
     data = Sensors(gyroScaleFactor, accScaleFactor, VCC, Resistor, tau)
     data.calibrateGyro(s, numCalibrationPoints)
 
+    # Set up data logging
+    df = pd.DataFrame(columns=['Time','FSR1','FSR2','FSR3','FSR4','FSR5','FSR6','FSR7','FSR8','FSR9','FSR10','FSR11','Avg'])
+
     # Run for __ seconds
     startTime = time.time()
+    count = 0
 
     while(time.time() < (startTime + 10)):
         data.getData(s)
         print("Roll/Pitch/Yaw: ", data.roll, data.pitch, data.yaw)
         print("FSR's: ", data.force)
+        df.loc[df.shape[0]] = [time.time() - startTime] + data.force
+        count += 1
         print()
 
-    # Close serial connection
+    # Close serial connection, write data, and display sampling rate
+    print("Samping rate: ",count/(time.time()-startTime)," Hz")
     s.close()
+    df.to_csv('data.csv',index = None, header=True)
 
 
 
