@@ -220,7 +220,8 @@ def main():
     data.calibrateGyro(s, numCalibrationPoints)
 
     # Set up data logging
-    df = pd.DataFrame(columns=['Time','FSR1','FSR2','FSR3','FSR4','FSR5','FSR6','FSR7','FSR8','FSR9','FSR10','FSR11','Avg'])
+    df = pd.DataFrame(columns=['Time','FSR1','FSR2','FSR3','FSR4','FSR5','FSR6',\
+    'FSR7','FSR8','FSR9','FSR10','FSR11','Avg'])
 
     # Run for __ seconds
     startTime = time.time()
@@ -228,8 +229,8 @@ def main():
 
     while(time.time() < (startTime + 10)):
         data.getData(s)
-        print("Roll/Pitch/Yaw: ", data.roll, data.pitch, data.yaw)
-        print("FSR's: ", data.force)
+        print("Roll/Pitch/Yaw: ", round(data.roll,2), round(data.pitch,2), round(data.yaw,2))
+        print("FSR's: ", [round(x,2) for x in data.force])
         df.loc[df.shape[0]] = [time.time() - startTime] + data.force
         count += 1
         print()
