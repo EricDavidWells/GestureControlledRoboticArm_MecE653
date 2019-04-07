@@ -93,13 +93,15 @@ class DAQ:
         self.serialConnection.reset_input_buffer()
 
     def getSerialData(self):
+        # Initialize data out
+        dataOut = []
+
         # Check for header bytes and then read bytearray if header satisfied
         if (struct.unpack('B', self.serialConnection.read())[0] is 0x9F) and (struct.unpack('B', self.serialConnection.read())[0] is 0x6E):
             self.rawData = self.serialConnection.read(self.numSignals * self.dataNumBytes)
 
             # Copy raw data to new variable and set up the data out variable
             privateData = copy.deepcopy(self.rawData[:])
-            dataOut = []
 
             # Loop through all the signals and decode the values to decimal
             for i in range(self.numSignals):
@@ -108,11 +110,12 @@ class DAQ:
                 dataOut.append(value)
 
         # Check if data is usable otherwise repeat (recursive function)
-        try:
-            if dataOut:
-                if (struct.unpack('B', self.serialConnection.read())[0] is 0xAE) and (struct.unpack('B', self.serialConnection.read())[0] is 0x72):
-                    return dataOut
-        except:
+        if dataOut:
+            if (struct.unpack('B', self.serialConnection.read())[0] is 0xAE) and (struct.unpack('B', self.serialConnection.read())[0] is 0x72):
+                return dataOut
+            else:
+                return self.getSerialData()
+        else:
             return self.getSerialData()
 
     def close(self):
