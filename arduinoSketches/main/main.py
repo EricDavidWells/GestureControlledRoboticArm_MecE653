@@ -11,6 +11,7 @@ import time
 import struct
 import copy
 import math
+import pickle
 
 
 class Model:
@@ -24,9 +25,9 @@ class Model:
         ydata = []
         counter = 0
         for i in range(0, trainnum):
-            input("training iteration: {0}".format(i))
+            print("Training iteration: {0}".format(i))
             for k in range(0, classnum):
-                input("class number: {0}".format(k))
+                input("Class number: {0}".format(k))
                 for j in range(0, n):
                     data.getData(s)
                     a = [int(x) for x in data.force]
@@ -36,15 +37,7 @@ class Model:
         self.trainingxdata = np.array(xdata)
         self.trainingydata = np.array(ydata)
 
-        # print(self.trainingxdata[0:50])
-
     def plot_pca(self, show=True):
-        """
-        Plots the 3 dimensional PCA reduced version of data X.  Y is used to change color of different labels.
-        :param X: ndarray of input data without labels
-        :param Y: ndarray of labels with rows aligning with X
-        :return: pyplot axis of PCA reduced data
-        """
         self.pca = PCA(n_components=3)
         self.pca.fit(self.trainingxdata)
         Xpca = self.pca.fit_transform(self.trainingxdata)
@@ -394,18 +387,21 @@ def main():
     data = Sensors(gyroScaleFactor, accScaleFactor, VCC, Resistor, tau)
     data.calibrateGyro(s, numCalibrationPoints)
 
-    # data.logData(s,5)
-
     # set up and train model
     model = Model()
-    model.get_training_data(s, data, 3000, 4, 2)
+    model.get_training_data(s, data, 10000, 8, 3)
     model.plot_pca()
     model.trainSVM()
+    model.savemodel('8x3x10000-V1')
+
+    # load model
+    # filename = "Pickles"
+    # model = pickle.load(open(filename, 'rb'))
 
     # realtime control
+    T = int(input("Enter how many seconds to run real time control: "))
     startTime = time.time()
 
-    T = int(input("Enter how many seconds to run real time control: "))
     while(time.time() < (startTime + T)):
         data.getData(s)
         pred = model.predict(data.force)
@@ -414,9 +410,6 @@ def main():
 
     s.close()
 
-    # load model
-    # filename = "asdf"
-    # model = picle.load(open(filename), 'rb')
 
 if __name__ == '__main__':
     main()
