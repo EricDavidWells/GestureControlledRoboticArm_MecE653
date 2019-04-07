@@ -1,4 +1,8 @@
-import RPi.GPIO as GPIO
+# import RPi.GPIO as GPIO
+from sklearn.decomposition import PCA
+from sklearn import svm
+from mpl_toolkits import mplot3d
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import serial
@@ -46,7 +50,7 @@ class Model:
         Xpca = self.pca.fit_transform(self.trainingxdata)
 
         ax = plt.axes(projection='3d')
-        for i in range(0, int(Y.max()) + 1):
+        for i in range(0, int(self.trainingydata.max()) + 1):
             Xtemp = Xpca[self.trainingydata == i]
             ax.scatter3D(Xtemp[:, 0], Xtemp[:, 1], Xtemp[:, 2], cmap='Greens')
 
@@ -259,10 +263,10 @@ class Sensors:
         count = 0
 
         while time.time() < startTime + T:
-            data.getData(s)
-            print("Roll/Pitch/Yaw: ", round(data.roll, 2), round(data.pitch, 2), round(data.yaw, 2))
-            print("FSR's: ", [round(x, 2) for x in data.force])
-            df.loc[df.shape[0]] = [time.time() - startTime] + data.force
+            self.getData(s)
+            print("Roll/Pitch/Yaw: ", round(self.roll, 2), round(self.pitch, 2), round(self.yaw, 2))
+            print("FSR's: ", [round(x, 2) for x in self.force])
+            df.loc[df.shape[0]] = [time.time() - startTime] + self.force
             count += 1
             print()
 
@@ -360,6 +364,8 @@ def main():
 
     data = Sensors(gyroScaleFactor, accScaleFactor, VCC, Resistor, tau)
     data.calibrateGyro(s, numCalibrationPoints)
+
+    # data.logData(s,5)
 
     # set up and train model
     model = Model()
