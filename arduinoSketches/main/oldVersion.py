@@ -226,25 +226,27 @@ def main():
     count = 0
     tempData = []
 
-    while(time.time() < (startTime + 7)):
+    while(time.time() < (startTime + 14)):
         data.getData(s)
-        # print("Roll/Pitch/Yaw: ", data.roll, data.pitch, data.yaw)
-        # print("FSR's: ", data.force)
-        tt = time.time()
-        print(tt,tt-startTime)
 
+        tempData.append(data.force + [data.roll, data.pitch, data.yaw])
+
+        print(time.time()-startTime)
+        print("Roll/Pitch/Yaw: ", round(data.roll,2), round(data.pitch,2), round(data.yaw,2))
+        print("FSR's: ", [round(x,2) for x in data.force])
         print()
-        tempData.append([tt, (tt - startTime)] + data.force + [data.roll, data.pitch, data.yaw])
+
         count += 1
 
+    print("Average sample rate: ", int(count / (time.time() - startTime)), " Hz")
 
-    print(count / (time.time() - startTime))
     # Close serial connection
     s.close()
 
     # Write data to CSV
-    df = pd.DataFrame(tempData, columns=['Time', 'DeltaTime', 'FSR1', 'FSR2', 'FSR3', 'FSR4', 'FSR5', 'FSR6',
-                               'FSR7', 'FSR8', 'FSR9', 'FSR10', 'FSR11', 'Avg', 'Roll', 'Pitch', 'Yaw'])
+    df = pd.DataFrame(tempData, columns=['FSR1', 'FSR2', 'FSR3', 'FSR4', 'FSR5',
+                                         'FSR6', 'FSR7', 'FSR8', 'FSR9', 'FSR10',
+                                         'FSR11', 'Avg', 'Roll', 'Pitch', 'Yaw'])
     df.to_csv('data.csv', index=None, header=True)
 
 
