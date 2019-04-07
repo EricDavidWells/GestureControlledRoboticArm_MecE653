@@ -1,8 +1,21 @@
 from scipy.fftpack import fft
-import matplotlib.pyplot as plt
-import pandas as pd
-import numpy as np
 from scipy.signal import butter, lfilter
+from sklearn.decomposition import PCA
+import numpy as np
+from threading import Thread
+from sklearn import svm
+from mpl_toolkits import mplot3d
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import serial
+import time
+import struct
+import copy
+import math
+import pickle
+import os
+from main import Model
 
 
 def fftPlotter(t,signal):
@@ -34,6 +47,7 @@ def fftPlotter(t,signal):
     f.subplots_adjust(hspace=0.5)
     plt.show()
 
+
 def plotAll(t,df):
     # Create a figure
     fig = plt.figure(figsize=(12, 6))
@@ -49,6 +63,7 @@ def plotAll(t,df):
     plt.ylabel('Force (grams)',fontweight='bold')
     plt.legend(loc='upper center', ncol=4)
     plt.show()
+
 
 def buterLowpass(t,signal):
     # Create Subplot
@@ -77,10 +92,26 @@ def buterLowpass(t,signal):
     plt.show()
 
 
+
+
+
+datafilename = "8x3x2500-V1"
+os.chdir("..")
+os.chdir("..")
+datafilepath = os.path.abspath(os.curdir) + "\\data\\" + datafilename
+print(datafilepath)
+# pickle.load(open(datafilepath, 'rb'))
+model = pickle.load(open(datafilepath, 'rb'))
+# model.plot_pca()
+
+model.data_split(0.8)
+model.trainSVM()
+
+print("model accuracy: ", model.score(model.testingxdata, model.testingydata))
 # Read data from csv and make a data frame
-df = pd.read_csv('data.csv')
-t = df.iloc[:, 0].tolist()
-signal = df.iloc[:, 1].tolist()
+# df = pd.read_csv('data.csv')
+# t = df.iloc[:, 0].tolist()
+# signal = df.iloc[:, 1].tolist()
 
 # Plot all data
 # plotAll(t,df)
@@ -89,4 +120,4 @@ signal = df.iloc[:, 1].tolist()
 # fftPlotter(t,signal)
 
 # Butterworth Filtering
-buterLowpass(t,signal)
+# buterLowpass(t,signal)

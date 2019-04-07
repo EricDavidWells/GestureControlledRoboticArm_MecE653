@@ -61,8 +61,34 @@ class Model:
         prediction = self.model.predict([data])
         return prediction
 
+    def score(self, xdata, ydata):
+        score = self.model.score(xdata, ydata)
+        return score
+
     def savemodel(self, filename):
         pickle.dump(self, open(filename, 'wb'))
+
+    def data_split(self, p):
+        """
+        splits data into training and testing data by percentage p.
+        :param data: ndarray of total data to be split
+        :param p: percentage of data to be used for training
+        :return: data split into training and testing
+        """
+
+        data = np.hstack((self.trainingxdata, np.transpose(np.array([self.trainingydata]))))
+        datashuff = np.array(data)
+        np.random.shuffle(datashuff)
+
+        cutoff = int(p * data.shape[0])
+        self.trainingxdata = datashuff[0:cutoff, 0:-1]
+        self.trainingydata = datashuff[0:cutoff, -1]
+
+        self.testingxdata = datashuff[cutoff::, 0:-1]
+        self.testingydata = datashuff[cutoff::, -1]
+
+
+
 
 
 class DAQ:
