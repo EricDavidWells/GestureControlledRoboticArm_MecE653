@@ -1,5 +1,6 @@
 # import RPi.GPIO as GPIO
 from sklearn.decomposition import PCA
+from threading import Thread
 from sklearn import svm
 from mpl_toolkits import mplot3d
 import matplotlib.pyplot as plt
@@ -18,8 +19,7 @@ class Model:
         self.trainingxdata = None
         self.trainingydata = None
 
-    def get_training_data(self, s, n, classnum, trainnum):
-        s.readSerialStart()
+    def get_training_data(self, s, data, n, classnum, trainnum):
         xdata = []
         ydata = []
         counter = 0
@@ -28,15 +28,15 @@ class Model:
             for k in range(0, classnum):
                 input("class number: {0}".format(k))
                 for j in range(0, n):
-                    data = s.getSerialData()
-                    xdata.append(data)
+                    data.getData(s)
+                    a = [int(x) for x in data.force]
+                    xdata.append(a)
                     ydata.append(k)
-                    if counter > 50:
-                        print('.')
-                        counter = 0
-                    counter += 1
+
         self.trainingxdata = np.array(xdata)
         self.trainingydata = np.array(ydata)
+
+        # print(self.trainingxdata[0:50])
 
     def plot_pca(self, show=True):
         """
@@ -58,6 +58,10 @@ class Model:
             plt.figure(1)
             plt.show()
 
+    def trainSVM(self):
+        self.model = svm.SVC(kernel='rbf', gamma='scale')
+        self.model.fit(self.trainingxdata, self.trainingydata)
+
     def predict(self, data):
         prediction = self.model.predict([data])
         return prediction
@@ -75,6 +79,10 @@ class DAQ:
         self.numSignals = numSignals
         self.rawData = bytearray(numSignals * dataNumBytes)
         self.dataType = None
+        self.isRun = True
+        self.isReceiving = False
+        self.thread = None
+        self.dataOut = []
 
         if dataNumBytes == 2:
             self.dataType = 'h'
@@ -88,13 +96,28 @@ class DAQ:
             print("Failed to connect with " + str(serialPort) + ' at ' + str(serialBaud) + ' BAUD.')
 
     def readSerialStart(self):
+        # Create a thread
+        if self.thread == None:
+            self.thread = Thread(target=self.backgroundThread)
+            self.thread.start()
+
+            # Block till we start receiving values
+            while self.isReceiving != True:
+                time.sleep(0.1)
+
+    def backgroundThread(self):
         # Pause and clear buffer to start with a good connection
         time.sleep(2)
         self.serialConnection.reset_input_buffer()
 
+        # Read until closed
+        while (self.isRun):
+            self.getSerialData()
+            self.isReceiving = True
+
     def getSerialData(self):
         # Initialize data out
-        dataOut = []
+        tempData = []
 
         # Check for header bytes and then read bytearray if header satisfied
         if (struct.unpack('B', self.serialConnection.read())[0] is 0x9F) and (struct.unpack('B', self.serialConnection.read())[0] is 0x6E):
@@ -107,12 +130,12 @@ class DAQ:
             for i in range(self.numSignals):
                 data = privateData[(i*self.dataNumBytes):(self.dataNumBytes + i*self.dataNumBytes)]
                 value, = struct.unpack(self.dataType, data)
-                dataOut.append(value)
+                tempData.append(value)
 
         # Check if data is usable otherwise repeat (recursive function)
-        if dataOut:
+        if tempData:
             if (struct.unpack('B', self.serialConnection.read())[0] is 0xAE) and (struct.unpack('B', self.serialConnection.read())[0] is 0x72):
-                return dataOut
+                self.dataOut = tempData
             else:
                 return self.getSerialData()
         else:
@@ -120,7 +143,10 @@ class DAQ:
 
     def close(self):
         # Close the serial port connection
+        self.isRun = False
+        self.thread.join()
         self.serialConnection.close()
+
         print('Disconnected...')
 
 
@@ -155,7 +181,7 @@ class Sensors:
 
     def getRawSensorValues(self, s):
         # Get raw values from serial connection
-        val = s.getSerialData()
+        val = s.dataOut
         self.gx = val[0]
         self.gy = val[1]
         self.gz = val[2]
@@ -372,18 +398,21 @@ def main():
 
     # set up and train model
     model = Model()
-    model.get_training_data(s, 200, 4, 2)
+    model.get_training_data(s, data, 3000, 4, 2)
     model.plot_pca()
+    model.trainSVM()
 
     # realtime control
+    startTime = time.time()
 
-    starttime = time.time()
-    T = input("Enter how many seconds to run real time control: ")
+    T = int(input("Enter how many seconds to run real time control: "))
     while(time.time() < (startTime + T)):
         data.getData(s)
-        pred = model.predict(data.FSRvalues)
-    #     robotarm.updateclass(pred)
+        pred = model.predict(data.force)
+        print(pred)
+    #     robotarm.updateclass(pred[0])
 
+    s.close()
 
     # load model
     # filename = "asdf"
