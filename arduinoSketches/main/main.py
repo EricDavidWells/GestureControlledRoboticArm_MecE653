@@ -31,6 +31,8 @@ class Model:
                 for j in range(0, n):
                     data.getData(s)
                     a = [int(x) for x in data.force]
+                    # b = [int(data.ax),int(data.ay),int(data.az),int(data.gx),int(data.gy),int(data.gz),int(data.dtTimer)]
+                    # c = a+b
                     xdata.append(a)
                     ydata.append(k)
 
@@ -266,6 +268,13 @@ class Sensors:
         self.force[11] = np.mean(self.force)
 
     def getData(self,s):
+        # Get current time
+        timer = time.perf_counter()
+
+        # Stabilize sampling rate to 200 Hz
+        while (time.perf_counter() < timer + 0.005):
+            pass
+
         # Get data from serial
         self.getRawSensorValues(s)
 
@@ -276,25 +285,24 @@ class Sensors:
         self.processFSRvalues()
 
     def logData(self, s, T):
-        # Set up data logging
-        df = pd.DataFrame(columns=['Time', 'FSR1', 'FSR2', 'FSR3', 'FSR4', 'FSR5', 'FSR6',
-                                   'FSR7', 'FSR8', 'FSR9', 'FSR10', 'FSR11', 'Avg'])
-
-        # Run for __ seconds
-        startTime = time.time()
+        # Set up timer, counter, and temp data storage
+        startTime = time.perf_counter()
         count = 0
+        tempData = []
 
-        while time.time() < startTime + T:
+        # Run for T seconds
+        while time.perf_counter() < startTime + T:
             self.getData(s)
-            print("Roll/Pitch/Yaw: ", round(self.roll, 2), round(self.pitch, 2), round(self.yaw, 2))
-            print("FSR's: ", [round(x, 2) for x in self.force])
-            df.loc[df.shape[0]] = [time.time() - startTime] + self.force
+            tempData.append([time.perf_counter() - startTime] + self.force + [self.roll, self.pitch, self.yaw])
             count += 1
-            print()
 
         # Close serial connection, write data, and display sampling rate
-        print("Samping rate: ", count / (time.time() - startTime), " Hz")
-        s.close()
+        print("Samping rate: ", count / (time.perf_counter() - startTime), " Hz")
+
+        # Write data to CSV
+        df = pd.DataFrame(tempData, columns=['Time', 'FSR1', 'FSR2', 'FSR3', 'FSR4', 'FSR5', 'FSR6',
+                                   'FSR7', 'FSR8', 'FSR9', 'FSR10', 'FSR11', 'Avg', 'Roll', 'Pitch', 'Yaw'])
+
         df.to_csv('data.csv', index=None, header=True)
 
 
@@ -377,7 +385,7 @@ def main():
     s.readSerialStart()
 
     # Set up sensors
-    numCalibrationPoints = 500
+    numCalibrationPoints = 3000
     gyroScaleFactor = 131.0
     accScaleFactor = 16384.0
     VCC = 4.98
@@ -387,25 +395,26 @@ def main():
     data = Sensors(gyroScaleFactor, accScaleFactor, VCC, Resistor, tau)
     data.calibrateGyro(s, numCalibrationPoints)
 
+    data.logData(s, 10)
     # set up and train model
-    model = Model()
-    model.get_training_data(s, data, 10000, 8, 3)
-    model.plot_pca()
-    model.trainSVM()
-    model.savemodel('8x3x10000-V1')
+    # model = Model()
+    # model.get_training_data(s, data, 2500, 8, 3)
+    # model.plot_pca()
+    # model.trainSVM()
+    # model.savemodel('8x3x2500-Pi')
 
     # load model
-    # filename = "Pickles"
+    # filename = "8x3x10000-V1"
     # model = pickle.load(open(filename, 'rb'))
 
-    # realtime control
-    T = int(input("Enter how many seconds to run real time control: "))
-    startTime = time.time()
-
-    while(time.time() < (startTime + T)):
-        data.getData(s)
-        pred = model.predict(data.force)
-        print(pred)
+    # # realtime control
+    # T = int(input("Enter how many seconds to run real time control: "))
+    # startTime = time.time()
+    #
+    # while(time.time() < (startTime + T)):
+    #     data.getData(s)
+    #     pred = model.predict(data.force)
+    #     print(pred)
     #     robotarm.updateclass(pred[0])
 
     s.close()
