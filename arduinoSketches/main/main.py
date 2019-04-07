@@ -7,6 +7,59 @@ import copy
 import math
 
 
+class Model:
+    def __init__(self, model=None):
+        self.model = model
+        self.trainingxdata = None
+        self.trainingydata = None
+
+    def get_training_data(self, s, n, classnum, trainnum):
+        s.readSerialStart()
+        xdata = []
+        ydata = []
+        counter = 0
+        for i in range(0, trainnum):
+            input("training iteration: {0}".format(i))
+            for k in range(0, classnum):
+                input("class number: {0}".format(k))
+                for j in range(0, n):
+                    data = s.getSerialData()
+                    xdata.append(data)
+                    ydata.append(k)
+                    if counter > 50:
+                        print('.')
+                        counter = 0
+                    counter += 1
+        self.trainingxdata = np.array(xdata)
+        self.trainingydata = np.array(ydata)
+
+    def plot_pca(self, show=True):
+        """
+        Plots the 3 dimensional PCA reduced version of data X.  Y is used to change color of different labels.
+        :param X: ndarray of input data without labels
+        :param Y: ndarray of labels with rows aligning with X
+        :return: pyplot axis of PCA reduced data
+        """
+        self.pca = PCA(n_components=3)
+        self.pca.fit(self.trainingxdata)
+        Xpca = self.pca.fit_transform(self.trainingxdata)
+
+        ax = plt.axes(projection='3d')
+        for i in range(0, int(Y.max()) + 1):
+            Xtemp = Xpca[self.trainingydata == i]
+            ax.scatter3D(Xtemp[:, 0], Xtemp[:, 1], Xtemp[:, 2], cmap='Greens')
+
+        if show is True:
+            plt.figure(1)
+            plt.show()
+
+    def predict(self, data):
+        prediction = self.model.predict([data])
+        return prediction
+
+    def savemodel(self, filename):
+        pickle.dump(self, open(filename, 'wb'))
+
 
 class DAQ:
     def __init__(self, serialPort, serialBaud, dataNumBytes, numSignals):
@@ -61,7 +114,6 @@ class DAQ:
         # Close the serial port connection
         self.serialConnection.close()
         print('Disconnected...')
-
 
 
 class Sensors:
@@ -196,6 +248,30 @@ class Sensors:
         # Process FSR values
         self.processFSRvalues()
 
+    def logData(self, s, T):
+
+        starttime = time.time()
+
+        # Set up data logging
+        df = pd.DataFrame(columns=['Time', 'FSR1', 'FSR2', 'FSR3', 'FSR4', 'FSR5', 'FSR6',
+                                   'FSR7', 'FSR8', 'FSR9', 'FSR10', 'FSR11', 'Avg'])
+
+        # Run for __ seconds
+        startTime = time.time()
+        count = 0
+
+        while time.time() < startTime + T:
+            data.getData(s)
+            print("Roll/Pitch/Yaw: ", round(data.roll, 2), round(data.pitch, 2), round(data.yaw, 2))
+            print("FSR's: ", [round(x, 2) for x in data.force])
+            df.loc[df.shape[0]] = [time.time() - startTime] + data.force
+            count += 1
+            print()
+
+        # Close serial connection, write data, and display sampling rate
+        print("Samping rate: ", count / (time.time() - startTime), " Hz")
+        s.close()
+        df.to_csv('data.csv', index=None, header=True)
 
 
 def main():
@@ -219,28 +295,24 @@ def main():
     data = Sensors(gyroScaleFactor, accScaleFactor, VCC, Resistor, tau)
     data.calibrateGyro(s, numCalibrationPoints)
 
-    # Set up data logging
-    df = pd.DataFrame(columns=['Time','FSR1','FSR2','FSR3','FSR4','FSR5','FSR6',\
-    'FSR7','FSR8','FSR9','FSR10','FSR11','Avg'])
+    # set up and train model
+    model = Model()
+    model.get_training_data(s, 200, 4, 2)
+    model.plot_pca()
 
-    # Run for __ seconds
-    startTime = time.time()
-    count = 0
+    # realtime control
 
-    while(time.time() < (startTime + 10)):
+    starttime = time.time()
+    T = input("Enter how many seconds to run real time control: ")
+    while(time.time() < (startTime + T)):
         data.getData(s)
-        print("Roll/Pitch/Yaw: ", round(data.roll,2), round(data.pitch,2), round(data.yaw,2))
-        print("FSR's: ", [round(x,2) for x in data.force])
-        df.loc[df.shape[0]] = [time.time() - startTime] + data.force
-        count += 1
-        print()
-
-    # Close serial connection, write data, and display sampling rate
-    print("Samping rate: ",count/(time.time()-startTime)," Hz")
-    s.close()
-    df.to_csv('data.csv',index = None, header=True)
+        pred = model.predict(data.FSRvalues)
+    #     robotarm.updateclass(pred)
 
 
+    # load model
+    # filename = "asdf"
+    # model = picle.load(open(filename), 'rb')
 
 if __name__ == '__main__':
     main()
