@@ -1,8 +1,8 @@
-# import RPi.GPIO as GPIO
 from sklearn.decomposition import PCA
 from threading import Thread
 from sklearn import svm
 from mpl_toolkits import mplot3d
+import RPi.GPIO as GPIO
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -16,11 +16,13 @@ import pickle
 
 class Model:
     def __init__(self, model=None):
+        # Class / object / constructor setup
         self.model = model
         self.trainingxdata = None
         self.trainingydata = None
 
     def get_training_data(self, s, data, n, classnum, trainnum):
+        # Get user to do the gestures and record the data
         xdata = []
         ydata = []
         counter = 0
@@ -31,8 +33,6 @@ class Model:
                 for j in range(0, n):
                     data.getData(s)
                     a = [int(x) for x in data.force]
-                    # b = [int(data.ax),int(data.ay),int(data.az),int(data.gx),int(data.gy),int(data.gz),int(data.dtTimer)]
-                    # c = a+b
                     xdata.append(a)
                     ydata.append(k)
 
@@ -40,11 +40,12 @@ class Model:
         self.trainingydata = np.array(ydata)
 
     def plot_pca(self, show=True):
+        # Squash down the dimensions of FSR data and show in 3 dimensions for groupings
         self.pca = PCA(n_components=3)
         self.pca.fit(self.trainingxdata)
         Xpca = self.pca.fit_transform(self.trainingxdata)
-
         ax = plt.axes(projection='3d')
+
         for i in range(0, int(self.trainingydata.max()) + 1):
             Xtemp = Xpca[self.trainingydata == i]
             ax.scatter3D(Xtemp[:, 0], Xtemp[:, 1], Xtemp[:, 2], cmap='Greens')
@@ -54,28 +55,26 @@ class Model:
             plt.show()
 
     def trainSVM(self):
+        # Create a SVM classifier using sklearn
         self.model = svm.SVC(kernel='rbf', gamma='scale')
         self.model.fit(self.trainingxdata, self.trainingydata)
 
     def predict(self, data):
+        # Identify the gesture and return the result
         prediction = self.model.predict([data])
         return prediction
 
     def score(self, xdata, ydata):
+        # How accurate was the model?
         score = self.model.score(xdata, ydata)
         return score
 
     def savemodel(self, filename):
+        # Save with pickles so that retraining is not required
         pickle.dump(self, open(filename, 'wb'))
 
     def data_split(self, p):
-        """
-        splits data into training and testing data by percentage p.
-        :param data: ndarray of total data to be split
-        :param p: percentage of data to be used for training
-        :return: data split into training and testing
-        """
-
+        # Arrange the data into something that is useful
         data = np.hstack((self.trainingxdata, np.transpose(np.array([self.trainingydata]))))
         datashuff = np.array(data)
         np.random.shuffle(datashuff)
@@ -86,9 +85,6 @@ class Model:
 
         self.testingxdata = datashuff[cutoff::, 0:-1]
         self.testingydata = datashuff[cutoff::, -1]
-
-
-
 
 
 class DAQ:
@@ -294,13 +290,6 @@ class Sensors:
         self.force[11] = np.mean(self.force)
 
     def getData(self,s):
-        # Get current time
-        timer = time.perf_counter()
-
-        # Stabilize sampling rate to 200 Hz
-        while (time.perf_counter() < timer + 0.005):
-            pass
-
         # Get data from serial
         self.getRawSensorValues(s)
 
@@ -334,10 +323,11 @@ class Sensors:
 
 class robotArm:
     def __init__(self):
+        # Joint PWM ranges
         self.joint1Range = [500,2300]
         self.joint2Range = [1000,2000]
         self.joint3Range = [500,1200]
-        self.joint4Range = [1100,1100]   # [800,1800]
+        self.joint4Range = [1100,1100]
 
     def startControl(self):
         # Run `pinout` to see the numbers
@@ -402,7 +392,7 @@ class robotArm:
 
 def main():
     # Set up serial connection
-    portName = '/dev/cu.MECE653-DevB' # /dev/rfcomm0
+    portName = '/dev/rfcomm0'
     baudRate = 115200
     dataNumBytes = 2
     numSignals = 17
@@ -421,29 +411,31 @@ def main():
     data = Sensors(gyroScaleFactor, accScaleFactor, VCC, Resistor, tau)
     data.calibrateGyro(s, numCalibrationPoints)
 
-    data.logData(s, 10)
-    # set up and train model
-    # model = Model()
-    # model.get_training_data(s, data, 2500, 8, 3)
-    # model.plot_pca()
-    # model.trainSVM()
-    # model.savemodel('8x3x2500-Pi')
+    # Set up robot arm
+    bot = robotArm()
+    bot.startControl()
 
-    # load model
-    # filename = "8x3x10000-V1"
-    # model = pickle.load(open(filename, 'rb'))
+    # set up, train, and save model
+    model = Model()
+    model.get_training_data(s, data, 2500, 8, 3)
+    model.plot_pca()
+    model.trainSVM()
+    model.savemodel('8x3x2500-Pi')
 
-    # # realtime control
-    # T = int(input("Enter how many seconds to run real time control: "))
-    # startTime = time.time()
-    #
-    # while(time.time() < (startTime + T)):
-    #     data.getData(s)
-    #     pred = model.predict(data.force)
-    #     print(pred)
-    #     robotarm.updateclass(pred[0])
+    # Realtime control
+    T = int(input("Enter how many seconds to run real time control: "))
+    startTime = time.time()
 
+    while(time.time() < (startTime + T)):
+        data.getData(s)
+        pred = model.predict(data.force)
+        bot.updateclass(pred[0])
+        print(pred)
+
+    # Close all the connections and end program
     s.close()
+    bot.endControl()
+    print("Closed all")
 
 
 if __name__ == '__main__':
