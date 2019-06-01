@@ -91,4 +91,11 @@ sudo rfcomm bind /dev/rfcomm0 <dev> 1
 
 If you do not get any errors and everything checks out go ahead to `main.py` and give it a try. The Bluetooth serial port will be on `/dev/rfcomm0`.
 
-If I missed any steps or something is not working please leave a comment or issue so that the guide can be fixed. 
+If I missed any steps or something is not working please leave a comment or issue so that the guide can be fixed. A good resource can be found [here](https://www.raspberrypi.org/forums/viewtopic.php?t=188295).
+
+## Update
+Once everything is set up properly when logging onto the RPi simply enter the command below to activate the bluetooth serial port.
+
+```
+sudo rfcomm bind /dev/rfcomm0 98:D3:71:FD:61:63 1
+```
