@@ -1,10 +1,90 @@
+from sklearn.decomposition import PCA
+from threading import Thread
+from sklearn import svm
+from mpl_toolkits import mplot3d
+import RPi.GPIO as GPIO
+import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import serial
 import time
 import struct
 import copy
 import math
+import pickle
 
+
+class Model:
+    def __init__(self, model=None):
+        # Class / object / constructor setup
+        self.model = model
+        self.trainingxdata = None
+        self.trainingydata = None
+
+    def get_training_data(self, s, data, n, classnum, trainnum):
+        # Get user to do the gestures and record the data
+        xdata = []
+        ydata = []
+        counter = 0
+        for i in range(0, trainnum):
+            print("Training iteration: {0}".format(i))
+            for k in range(0, classnum):
+                input("Class number: {0}".format(k))
+                for j in range(0, n):
+                    data.getData(s)
+                    a = [int(x) for x in data.force]
+                    xdata.append(a)
+                    ydata.append(k)
+
+        self.trainingxdata = np.array(xdata)
+        self.trainingydata = np.array(ydata)
+
+    def plot_pca(self, show=True):
+        # Squash down the dimensions of FSR data and show in 3 dimensions for groupings
+        self.pca = PCA(n_components=3)
+        self.pca.fit(self.trainingxdata)
+        Xpca = self.pca.fit_transform(self.trainingxdata)
+        ax = plt.axes(projection='3d')
+
+        for i in range(0, int(self.trainingydata.max()) + 1):
+            Xtemp = Xpca[self.trainingydata == i]
+            ax.scatter3D(Xtemp[:, 0], Xtemp[:, 1], Xtemp[:, 2], cmap='Greens')
+
+        if show is True:
+            plt.figure(1)
+            plt.show()
+
+    def trainSVM(self):
+        # Create a SVM classifier using sklearn
+        self.model = svm.SVC(kernel='rbf', gamma='scale')
+        self.model.fit(self.trainingxdata, self.trainingydata)
+
+    def predict(self, data):
+        # Identify the gesture and return the result
+        prediction = self.model.predict([data])
+        return prediction
+
+    def score(self, xdata, ydata):
+        # How accurate was the model?
+        score = self.model.score(xdata, ydata)
+        return score
+
+    def savemodel(self, filename):
+        # Save with pickles so that retraining is not required
+        pickle.dump(self, open(filename, 'wb'))
+
+    def data_split(self, p):
+        # Arrange the data into something that is useful
+        data = np.hstack((self.trainingxdata, np.transpose(np.array([self.trainingydata]))))
+        datashuff = np.array(data)
+        np.random.shuffle(datashuff)
+
+        cutoff = int(p * data.shape[0])
+        self.trainingxdata = datashuff[0:cutoff, 0:-1]
+        self.trainingydata = datashuff[0:cutoff, -1]
+
+        self.testingxdata = datashuff[cutoff::, 0:-1]
+        self.testingydata = datashuff[cutoff::, -1]
 
 
 class DAQ:
@@ -16,6 +96,10 @@ class DAQ:
         self.numSignals = numSignals
         self.rawData = bytearray(numSignals * dataNumBytes)
         self.dataType = None
+        self.isRun = True
+        self.isReceiving = False
+        self.thread = None
+        self.dataOut = []
 
         if dataNumBytes == 2:
             self.dataType = 'h'
@@ -29,38 +113,58 @@ class DAQ:
             print("Failed to connect with " + str(serialPort) + ' at ' + str(serialBaud) + ' BAUD.')
 
     def readSerialStart(self):
+        # Create a thread
+        if self.thread == None:
+            self.thread = Thread(target=self.backgroundThread)
+            self.thread.start()
+
+            # Block till we start receiving values
+            while self.isReceiving != True:
+                time.sleep(0.1)
+
+    def backgroundThread(self):
         # Pause and clear buffer to start with a good connection
         time.sleep(2)
         self.serialConnection.reset_input_buffer()
 
+        # Read until closed
+        while (self.isRun):
+            self.getSerialData()
+            self.isReceiving = True
+
     def getSerialData(self):
+        # Initialize data out
+        tempData = []
+
         # Check for header bytes and then read bytearray if header satisfied
         if (struct.unpack('B', self.serialConnection.read())[0] is 0x9F) and (struct.unpack('B', self.serialConnection.read())[0] is 0x6E):
             self.rawData = self.serialConnection.read(self.numSignals * self.dataNumBytes)
 
             # Copy raw data to new variable and set up the data out variable
             privateData = copy.deepcopy(self.rawData[:])
-            dataOut = []
 
             # Loop through all the signals and decode the values to decimal
             for i in range(self.numSignals):
                 data = privateData[(i*self.dataNumBytes):(self.dataNumBytes + i*self.dataNumBytes)]
                 value, = struct.unpack(self.dataType, data)
-                dataOut.append(value)
+                tempData.append(value)
 
         # Check if data is usable otherwise repeat (recursive function)
-        try:
-            if dataOut:
-                if (struct.unpack('B', self.serialConnection.read())[0] is 0xAE) and (struct.unpack('B', self.serialConnection.read())[0] is 0x72):
-                    return dataOut
-        except:
+        if tempData:
+            if (struct.unpack('B', self.serialConnection.read())[0] is 0xAE) and (struct.unpack('B', self.serialConnection.read())[0] is 0x72):
+                self.dataOut = tempData
+            else:
+                return self.getSerialData()
+        else:
             return self.getSerialData()
 
     def close(self):
         # Close the serial port connection
+        self.isRun = False
+        self.thread.join()
         self.serialConnection.close()
-        print('Disconnected...')
 
+        print('Disconnected...')
 
 
 class Sensors:
@@ -94,7 +198,7 @@ class Sensors:
 
     def getRawSensorValues(self, s):
         # Get raw values from serial connection
-        val = s.getSerialData()
+        val = s.dataOut
         self.gx = val[0]
         self.gy = val[1]
         self.gz = val[2]
@@ -195,11 +299,100 @@ class Sensors:
         # Process FSR values
         self.processFSRvalues()
 
+    def logData(self, s, T):
+        # Set up timer, counter, and temp data storage
+        startTime = time.perf_counter()
+        count = 0
+        tempData = []
+
+        # Run for T seconds
+        while time.perf_counter() < startTime + T:
+            self.getData(s)
+            tempData.append([time.perf_counter() - startTime] + self.force + [self.roll, self.pitch, self.yaw])
+            count += 1
+
+        # Close serial connection, write data, and display sampling rate
+        print("Samping rate: ", count / (time.perf_counter() - startTime), " Hz")
+
+        # Write data to CSV
+        df = pd.DataFrame(tempData, columns=['Time', 'FSR1', 'FSR2', 'FSR3', 'FSR4', 'FSR5', 'FSR6',
+                                   'FSR7', 'FSR8', 'FSR9', 'FSR10', 'FSR11', 'Avg', 'Roll', 'Pitch', 'Yaw'])
+
+        df.to_csv('data.csv', index=None, header=True)
+
+
+class robotArm:
+    def __init__(self):
+        # Joint PWM ranges
+        self.joint1Range = [500,2300]
+        self.joint2Range = [1000,2000]
+        self.joint3Range = [500,1200]
+        self.joint4Range = [1100,1100]
+
+    def startControl(self):
+        # Run `pinout` to see the numbers
+        GPIO.setmode(GPIO.BOARD)
+
+        # Set up PWM pins on GPIO
+        GPIO.setup(12, GPIO.OUT)
+        GPIO.setup(13, GPIO.OUT)
+        GPIO.setup(18, GPIO.OUT)
+        GPIO.setup(19, GPIO.OUT)
+
+        # Initialize all servos to center position
+        self.joint1 = GPIO.PWM(12, 50)
+        self.joint2 = GPIO.PWM(13, 50)
+        self.joint3 = GPIO.PWM(18, 50)
+        self.joint4 = GPIO.PWM(19, 50)
+
+        # Write start position
+        self.joint1.start(7.5)
+        self.joint2.start(7.5)
+        self.joint3.start(7.5)
+        self.joint4.start(7.5)
+
+    def updateState(self, state):
+        # percentage / (20 ms * unit conversion)
+        dutyCycleScale = 100 / (20*1000)
+
+        # Check the different states and write a pule
+        if state == 1:
+            # Fist
+            self.joint4.ChangeDutyCycle(self.joint4Range[1]*dutyCycleScale)
+        elif state == 2:
+            # Rest
+            self.joint4.ChangeDutyCycle(self.joint4Range[0]*dutyCycleScale)
+        elif state == 3:
+            # Extension
+            self.joint1.ChangeDutyCycle(self.joint1Range[0]*dutyCycleScale)
+        elif state == 4:
+            # Flexion
+            self.joint1.ChangeDutyCycle(self.joint1Range[1]*dutyCycleScale)
+        elif state == 5:
+            # Forward
+            self.joint2.ChangeDutyCycle(self.joint2Range[0]*dutyCycleScale)
+            self.joint3.ChangeDutyCycle(self.joint3Range[1]*dutyCycleScale)
+        elif state == 6:
+            # Back
+            self.joint2.ChangeDutyCycle(self.joint2Range[1]*dutyCycleScale)
+            self.joint3.ChangeDutyCycle(self.joint3Range[0]*dutyCycleScale)
+        else:
+            print("No state found")
+
+    def endControl(self):
+        # Stop writing PWM signal to servos
+        self.joint1.stop()
+        self.joint2.stop()
+        self.joint3.stop()
+        self.joint4.stop()
+
+        # Clean up ports used
+        GPIO.cleanup()
 
 
 def main():
     # Set up serial connection
-    portName = '/dev/rfcomm0' # /dev/cu.MECE653-DevB
+    portName = '/dev/rfcomm0'
     baudRate = 115200
     dataNumBytes = 2
     numSignals = 17
@@ -208,7 +401,7 @@ def main():
     s.readSerialStart()
 
     # Set up sensors
-    numCalibrationPoints = 500
+    numCalibrationPoints = 3000
     gyroScaleFactor = 131.0
     accScaleFactor = 16384.0
     VCC = 4.98
@@ -218,18 +411,31 @@ def main():
     data = Sensors(gyroScaleFactor, accScaleFactor, VCC, Resistor, tau)
     data.calibrateGyro(s, numCalibrationPoints)
 
-    # Run for __ seconds
+    # Set up robot arm
+    bot = robotArm()
+    bot.startControl()
+
+    # set up, train, and save model
+    model = Model()
+    model.get_training_data(s, data, 2500, 8, 3)
+    model.plot_pca()
+    model.trainSVM()
+    model.savemodel('8x3x2500-Pi')
+
+    # Realtime control
+    T = int(input("Enter how many seconds to run real time control: "))
     startTime = time.time()
 
-    while(time.time() < (startTime + 10)):
+    while(time.time() < (startTime + T)):
         data.getData(s)
-        print("Roll/Pitch/Yaw: ", data.roll, data.pitch, data.yaw)
-        print("FSR's: ", data.force)
-        print()
+        pred = model.predict(data.force)
+        bot.updateclass(pred[0])
+        print(pred)
 
-    # Close serial connection
+    # Close all the connections and end program
     s.close()
-
+    bot.endControl()
+    print("Closed all")
 
 
 if __name__ == '__main__':
