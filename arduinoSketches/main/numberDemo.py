@@ -1,17 +1,20 @@
-# import RPi.GPIO as GPIO
-from sklearn.decomposition import PCA
+import serial
+import struct
+import time
 from threading import Thread
-from sklearn import svm
-from mpl_toolkits import mplot3d
-import matplotlib.pyplot as plt
+import queue
+import math
 import numpy as np
 import pandas as pd
-import serial
-import time
-import struct
-import copy
-import math
+from sklearn.decomposition import PCA
+from sklearn import svm
 import pickle
+import matplotlib.pyplot as plt
+from mpl_toolkits import mplot3d
+# import pygame
+from scipy import stats
+import random
+import cv2
 
 
 class Model:
@@ -20,16 +23,19 @@ class Model:
         self.trainingxdata = None
         self.trainingydata = None
 
-    def get_training_data(self, s, data, n, classnum, trainnum):
+    def get_training_data(self, q, data, n, classnum, trainnum):
         xdata = []
         ydata = []
         counter = 0
         for i in range(0, trainnum):
             print("Training iteration: {0}".format(i))
             for k in range(0, classnum):
-                input("Class number: {0}".format(k))
+                print("Class number: {0} starting in 2 second..".format(k))
+                time.sleep(2)
+                print("    gathering data...")
+                q.empty()
                 for j in range(0, n):
-                    data.getData(s)
+                    data.getData(q)
                     a = [int(x) for x in data.force]
                     # b = [int(data.ax),int(data.ay),int(data.az),int(data.gx),int(data.gy),int(data.gz),int(data.dtTimer)]
                     # c = a+b
@@ -45,10 +51,16 @@ class Model:
         Xpca = self.pca.fit_transform(self.trainingxdata)
 
         ax = plt.axes(projection='3d')
+        legend = ["Rest", "Extension", "Flexion", "Fist", "Supination", "Pronation", "Adduction", "Abduction"]
         for i in range(0, int(self.trainingydata.max()) + 1):
             Xtemp = Xpca[self.trainingydata == i]
             ax.scatter3D(Xtemp[:, 0], Xtemp[:, 1], Xtemp[:, 2], cmap='Greens')
+            # ax.scatter3D(Xtemp[0::100][:, 0], Xtemp[0::100][:, 1], Xtemp[0::100][:, 2], cmap='Greens')
 
+        ax.set_xlabel("PCA Axis 1")
+        ax.set_ylabel("PCA Axis 2")
+        ax.set_zlabel("PCA Axis 3")
+        ax.legend(legend, loc=2)
         if show is True:
             plt.figure(1)
             plt.show()
@@ -88,93 +100,6 @@ class Model:
         self.testingydata = datashuff[cutoff::, -1]
 
 
-class DAQ:
-    def __init__(self, serialPort, serialBaud, dataNumBytes, numSignals):
-        # Class / object / constructor setup
-        self.port = serialPort
-        self.baud = serialBaud
-        self.dataNumBytes = dataNumBytes
-        self.numSignals = numSignals
-        self.rawData = bytearray(numSignals * dataNumBytes)
-        self.dataType = None
-        self.isRun = True
-        self.isReceiving = False
-        self.thread = None
-        self.dataOut = []
-
-        if dataNumBytes == 2:
-            self.dataType = 'h'
-
-        # Connect to serial port
-        print('Trying to connect to: ' + str(serialPort) + ' at ' + str(serialBaud) + ' BAUD.')
-        try:
-            self.serialConnection = serial.Serial(serialPort, serialBaud, timeout=4)
-            print('Connected to ' + str(serialPort) + ' at ' + str(serialBaud) + ' BAUD.')
-        except:
-            print("Failed to connect with " + str(serialPort) + ' at ' + str(serialBaud) + ' BAUD.')
-
-    def readSerialStart(self):
-        # Create a thread
-        if self.thread == None:
-            self.thread = Thread(target=self.backgroundThread)
-            self.thread.start()
-
-            # Block till we start receiving values
-            while self.isReceiving != True:
-                time.sleep(0.1)
-
-    def backgroundThread(self):
-        # Pause and clear buffer to start with a good connection
-        time.sleep(2)
-        self.serialConnection.reset_input_buffer()
-
-        # Read until closed
-        while (self.isRun):
-            self.getSerialData()
-            print(self.serialConnection.in_waiting)
-            self.isReceiving = True
-
-    def getSerialData(self):
-        # Initialize data out
-        tempData = []
-
-
-        print(self.serialConnection.in_waiting)
-        # Check for header bytes and then read bytearray if header satisfied
-        if (struct.unpack('B', self.serialConnection.read())[0] is 0x9F) and (struct.unpack('B', self.serialConnection.read())[0] is 0x6E):
-
-            self.rawData = self.serialConnection.read(self.numSignals * self.dataNumBytes)
-
-            # Copy raw data to new variable and set up the data out variable
-            # privateData = copy.deepcopy(self.rawData[:])
-
-            # Loop through all the signals and decode the values to decimal
-            if len(self.rawData) is self.numSignals*self.dataNumBytes:
-                for i in range(self.numSignals):
-                # for i in range(len(self.rawData)):
-                    data = self.rawData[(i*self.dataNumBytes):(self.dataNumBytes + i*self.dataNumBytes)]
-                    value, = struct.unpack(self.dataType, data)
-                    tempData.append(value)
-
-        # Check if data is usable otherwise repeat (recursive function)
-        if tempData:
-            if (struct.unpack('B', self.serialConnection.read())[0] is 0xAE) and (struct.unpack('B', self.serialConnection.read())[0] is 0x72):
-                self.dataOut = tempData
-                return
-            else:
-                return
-        else:
-            return
-
-    def close(self):
-        # Close the serial port connection
-        self.isRun = False
-        self.thread.join()
-        self.serialConnection.close()
-
-        print('Disconnected...')
-
-
 class Sensors:
     def __init__(self, gyroScaleFactor, accScaleFactor, VCC, Resistor, tau):
         # Class / object / constructor setup
@@ -204,9 +129,14 @@ class Sensors:
         self.FSRvalues = []
         self.force = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
-    def getRawSensorValues(self, s):
+    def getRawSensorValues(self, q):
         # Get raw values from serial connection
-        val = s.dataOut
+        while q.empty():
+            time.sleep(0.0001)
+            pass
+        val = q.get(block=False)
+        q.task_done()
+
         self.gx = val[0]
         self.gy = val[1]
         self.gz = val[2]
@@ -297,13 +227,13 @@ class Sensors:
         # Write the last entry of force to be the average value
         self.force[11] = np.mean(self.force)
 
-    def getData(self,s):
+    def getData(self, s):
         # Get current time
         timer = time.perf_counter()
 
         # Stabilize sampling rate to 200 Hz
-        while (time.perf_counter() < timer + 0.005):
-            pass
+        # while (time.perf_counter() < timer + 0.005):
+        #     pass
 
         # Get data from serial
         self.getRawSensorValues(s)
@@ -336,122 +266,201 @@ class Sensors:
         df.to_csv('data.csv', index=None, header=True)
 
 
-class robotArm:
-    def __init__(self):
-        self.joint1Range = [500,2300]
-        self.joint2Range = [1000,2000]
-        self.joint3Range = [500,1200]
-        self.joint4Range = [1100,1100]   # [800,1800]
+def get_serial_data(s):
+    while True:
+        try:
+            if (struct.unpack('B', s.read())[0] is 0x9F) and (
+                    struct.unpack('B', s.read())[0] is 0x6E):
+                data = s.read(34)
+                # print(data)
 
-    def startControl(self):
-        # Run `pinout` to see the numbers
-        GPIO.setmode(GPIO.BOARD)
+                if (struct.unpack('B', s.read())[0] is 0xAE) and (
+                        struct.unpack('B', s.read())[0] is 0x72):
 
-        # Set up PWM pins on GPIO
-        GPIO.setup(12, GPIO.OUT)
-        GPIO.setup(13, GPIO.OUT)
-        GPIO.setup(18, GPIO.OUT)
-        GPIO.setup(19, GPIO.OUT)
+                    tempdata = []
+                    for i in range(17):
+                        # for i in range(len(self.rawData)):
+                        data2 = data[(i * 2):(2 + i * 2)]
+                        value, = struct.unpack('h', data2)
+                        tempdata.append(value)
 
-        # Initialize all servos to center position
-        self.joint1 = GPIO.PWM(12, 50)
-        self.joint2 = GPIO.PWM(13, 50)
-        self.joint3 = GPIO.PWM(18, 50)
-        self.joint4 = GPIO.PWM(19, 50)
+                    if not q.full():
+                        q.put(tempdata, block=False)
+                    else:
+                        q.get()
+                        q.task_done()
+                        q.put(tempdata, block=False)
 
-        # Write start position
-        self.joint1.start(7.5)
-        self.joint2.start(7.5)
-        self.joint3.start(7.5)
-        self.joint4.start(7.5)
-
-    def updateState(self, state):
-        # percentage / (20 ms * unit conversion)
-        dutyCycleScale = 100 / (20*1000)
-
-        # Check the different states and write a pule
-        if state == 1:
-            # Fist
-            self.joint4.ChangeDutyCycle(self.joint4Range[1]*dutyCycleScale)
-        elif state == 2:
-            # Rest
-            self.joint4.ChangeDutyCycle(self.joint4Range[0]*dutyCycleScale)
-        elif state == 3:
-            # Extension
-            self.joint1.ChangeDutyCycle(self.joint1Range[0]*dutyCycleScale)
-        elif state == 4:
-            # Flexion
-            self.joint1.ChangeDutyCycle(self.joint1Range[1]*dutyCycleScale)
-        elif state == 5:
-            # Forward
-            self.joint2.ChangeDutyCycle(self.joint2Range[0]*dutyCycleScale)
-            self.joint3.ChangeDutyCycle(self.joint3Range[1]*dutyCycleScale)
-        elif state == 6:
-            # Back
-            self.joint2.ChangeDutyCycle(self.joint2Range[1]*dutyCycleScale)
-            self.joint3.ChangeDutyCycle(self.joint3Range[0]*dutyCycleScale)
-        else:
-            print("No state found")
-
-    def endControl(self):
-        # Stop writing PWM signal to servos
-        self.joint1.stop()
-        self.joint2.stop()
-        self.joint3.stop()
-        self.joint4.stop()
-
-        # Clean up ports used
-        GPIO.cleanup()
+        except:
+            print("Error 0x08")
 
 
-def main():
-    # Set up serial connection
-    # portName = '/dev/cu.MECE653-DevB' # /dev/rfcomm0
-    portName = 'COM7'
-    baudRate = 115200
-    dataNumBytes = 2
-    numSignals = 17
+s = serial.Serial('/dev/cu.MECE653-DevB', 115200, timeout=1)
+time.sleep(1)
+q = queue.Queue(maxsize=10)
+thread = Thread(target=get_serial_data, args=(s,))
+thread.start()
 
-    s = DAQ(portName, baudRate, dataNumBytes, numSignals)
-    s.readSerialStart()
-
-    time.sleep(0.001)
-
-    # Set up sensors
-    numCalibrationPoints = 3000
-    gyroScaleFactor = 131.0
-    accScaleFactor = 16384.0
-    VCC = 4.98
-    Resistor = 5100.0
-    tau = 0.98
-
-    data = Sensors(gyroScaleFactor, accScaleFactor, VCC, Resistor, tau)
-    # data.calibrateGyro(s, numCalibrationPoints)
-
-    # data.logData(s, 10)
-    # set up and train model
-    # model = Model()
-    # model.get_training_data(s, data, 2500, 8, 3)
-    # model.plot_pca()
-    # model.trainSVM()
-    # model.savemodel('8x3x2500-Pi')
-
-    # load model
-    # filename = "8x3x10000-V1"
-    # model = pickle.load(open(filename, 'rb'))
-
-    # # realtime control
-    # T = int(input("Enter how many seconds to run real time control: "))
-    # startTime = time.time()
-    #
-    # while(time.time() < (startTime + T)):
-    #     data.getData(s)
-    #     pred = model.predict(data.force)
-    #     print(pred)
-    #     robotarm.updateclass(pred[0])
-
-    s.close()
+# Set up sensors
+numCalibrationPoints = 500
+gyroScaleFactor = 131.0
+accScaleFactor = 16384.0
+VCC = 4.98
+Resistor = 5100.0
+tau = 0.98
 
 
-if __name__ == '__main__':
-    main()
+data = Sensors(gyroScaleFactor, accScaleFactor, VCC, Resistor, tau)
+# data.calibrateGyro(q, numCalibrationPoints)
+# data.logData(q, 10)
+
+model = Model()
+model.get_training_data(q, data, 200, 8, 1)
+
+model.plot_pca()
+model.trainSVM()
+# model.savemodel('8x3x2500-Pi')
+
+# model = pickle.load(open('8x3x2500-Pi', 'rb'))
+# model.plot_pca()
+# model.data_split(0.9)
+# model.trainSVM()
+# print(model.score(model.testingxdata, model.testingydata))
+# model.data_split(0.5)
+# t = np.linspace(0, model.testingxdata.size/200, model.testingxdata.shape[0])
+# noise = np.array([i*random.random() for i in t])
+# noise = np.tile(noise, (1,12)).T
+# randomamplitude = np.random.rand(model.testingxdata.shape[0], model.testingxdata.shape[1])
+# randomphaseshift = np.random.rand(randomamplitude.shape[0], randomamplitude.shape[1])*3.14159*2
+# t = np.tile(t, (12, 1)).T
+# sinnoise = 200*np.sin(np.add(t*2*3.14159*10, randomphaseshift))
+# noise = np.multiply(randomamplitude, sinnoise)
+#
+# model.trainingxdata = np.add(model.trainingxdata, noise)
+# model.testingxdata = np.add(model.testingxdata, noise)
+# model.plot_pca()
+# model.trainSVM()
+# print(model.score(model.testingxdata, model.testingydata))
+
+
+
+# Text formatting
+font        = cv2.FONT_HERSHEY_SIMPLEX
+fontScale  = 2.5
+fontColor   = (255,255,255)
+lineType    = 2
+
+# Variable definition(s)
+width = 1280
+height = 720
+
+# Set background, set time stamp, codec, and video recorder
+color = np.zeros((height,width,3), np.uint8)
+
+
+T = int(input("Enter how many seconds to run real time control: "))
+startTime = time.time()
+prevtime = time.time()
+predvec = np.zeros(5)
+
+while(time.time() < startTime + T):
+
+    # Create a black background
+    color = np.zeros((height,width,3), np.uint8)
+
+    data.getData(q)
+    pred = model.predict(data.force)
+    print(pred, " ", q.qsize(), " ", s.in_waiting, " ", 1/(time.time()-prevtime))
+    prevtime = time.time()
+
+    for i in range(0,len(predvec)-1):
+        predvec[i] = predvec[i+1]
+    predvec[-1] = pred[0]
+
+    cv2.putText(color,"Current Prediction: %s"%stats.mode(predvec)[0][0],(100,int(height/2)),font,fontScale,fontColor,lineType)
+
+    # Keyboard Toggles
+    key = cv2.waitKey(1)
+
+    if key == ord('q'):
+        break
+
+    # Display the resulting frame
+    cv2.imshow("Number Demo",color)
+
+
+
+cv2.destroyAllWindows()
+
+
+
+
+#
+# #
+#
+#
+# pygame.init()
+#
+# white = (255, 255, 255)
+# green = (0, 255, 0)
+# blue = (0, 0, 128)
+#
+# # assigning values to X and Y variable
+# X = 1000
+# Y = 1000
+#
+# # create the display surface object
+# # of specific dimension..e(X, Y).
+# display_surface = pygame.display.set_mode((X, Y))
+#
+# # set the pygame window name
+# pygame.display.set_caption('Show Text')
+#
+# # create a font object.
+# # 1st parameter is the font file
+# # which is present in pygame.
+# # 2nd parameter is size of the font
+# font = pygame.font.Font('freesansbold.ttf', 500)
+#
+# # create a text suface object,
+# # on which text is drawn on it.
+# text = font.render('GeeksForGeeks', True, white, blue)
+#
+# # create a rectangular object for the
+# # text surface object
+# textRect = text.get_rect()
+#
+# # set the center of the rectangular object.
+# textRect.center = (X // 2, Y // 2)
+#
+# predvec = np.zeros(50)
+#
+# while(time.time() < startTime + T):
+#
+#     data.getData(q)
+#     pred = model.predict(data.force)
+#     print(pred, " ", q.qsize(), " ", s.in_waiting, " ", 1/(time.time()-prevtime))
+#     prevtime = time.time()
+#
+#     for i in range(0,len(predvec)-1):
+#         predvec[i] = predvec[i+1]
+#     predvec[-1] = pred[0]
+#
+#     text = font.render(str(round(stats.mode(predvec)[0][0])), True, white, blue)
+#     textRect = text.get_rect()
+#     textRect.center = (X // 2, Y // 2)
+#     display_surface.fill(white)
+#     display_surface.blit(text, textRect)
+#     pygame.display.update()
+#     for event in pygame.event.get():
+#
+#         # if event object type is QUIT
+#         # then quitting the pygame
+#         # and program both.
+#         if event.type == pygame.QUIT:
+#             # deactivates the pygame library
+#             pygame.quit()
+#
+#             # quit the program.
+#             quit()
+# model.savemodel("syd")

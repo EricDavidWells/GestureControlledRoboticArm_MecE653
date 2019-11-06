@@ -7,7 +7,6 @@ import math
 import pandas as pd
 
 
-
 class DAQ:
     def __init__(self, serialPort, serialBaud, dataNumBytes, numSignals):
         # Class / object / constructor setup
@@ -202,7 +201,8 @@ class Sensors:
 
 def main():
     # Set up serial connection
-    portName = '/dev/cu.MECE653-DevB' # /dev/cu.MECE653-DevB
+    # portName = '/dev/cu.MECE653-DevB' # /dev/cu.MECE653-DevB
+    portName = 'COM7'
     baudRate = 115200
     dataNumBytes = 2
     numSignals = 17

@@ -17,10 +17,13 @@ import random
 
 
 class Model:
-    def __init__(self, model=None):
+    def __init__(self, model=None, model2=None):
         self.model = model
-        self.trainingxdata = None
-        self.trainingydata = None
+        self.model2 = model2
+        self.trainingxdata1 = None
+        self.trainingydata1 = None
+        self.trainingxdata2 = None
+        self.trainingydata2 = None
 
     def get_training_data(self, q, data, n, classnum, trainnum):
         xdata = []
@@ -43,27 +46,44 @@ class Model:
         self.trainingydata = np.array(ydata)
 
     def get_training_data_regression(self, q, data, n, passnum, trainnum):
-        xdata = []
-        ydata = []
+        xdata1 = []
+        ydata1 = []
+        xdata2 = []
+        ydata2 = []
         counter = 0
         for i in range(0, trainnum):
             print("Training iteration: {0}".format(i))
             for k in range(0, passnum):
                 print("Pass number: {0} starting in 2 seconds".format(k))
+                print("    gathering 1st DOF data in 2 seconds")
                 time.sleep(2)
-                print("    gathering data...")
+
                 for l in range(0, n):
                     print(l/n-0.5)
                     time.sleep(0.02)
                     data.getData(q)
                     a = [int(x) for x in data.force]
-                    xdata.append(a)
-                    ydata.append(l/n-0.5)
+                    xdata1.append(a)
+                    ydata1.append(l/n-0.5)
+                    xdata2.append(a)
+                    ydata2.append(0)
                     # print(str(a) + ', ' + str(l/n))
+                print("Acquiring 2nd DOF data in 2 seconds")
+                time.sleep(2)
+                for l in range(0, n):
+                    print(l/n-0.5)
+                    time.sleep(0.02)
+                    data.getData(q)
+                    a = [int(x) for x in data.force]
+                    xdata1.append(a)
+                    ydata1.append(0)
+                    xdata2.append(a)
+                    ydata2.append(l / n - 0.5)
 
-
-        self.trainingxdata = np.array(xdata)
-        self.trainingydata = np.array(ydata)
+        self.trainingxdata1 = np.array(xdata1)
+        self.trainingydata1 = np.array(ydata1)
+        self.trainingxdata2 = np.array(xdata2)
+        self.trainingydata2 = np.array(ydata2)
 
     def plot_pca(self, show=True):
         self.pca = PCA(n_components=3)
@@ -90,16 +110,26 @@ class Model:
         self.model.fit(self.trainingxdata, self.trainingydata)
 
     def trainSVR(self):
-        self.model = svm.SVR(kernel='linear', gamma='auto')
-        self.model.fit(self.trainingxdata, self.trainingydata)
+        self.model1 = svm.SVR(kernel='linear', gamma='auto')
+        self.model1.fit(self.trainingxdata1, self.trainingydata1)
+        self.model2 = svm.SVR(kernel='linear', gamma='auto')
+        self.model2.fit(self.trainingxdata2, self.trainingydata2)
 
-    def predict(self, data):
-        prediction = self.model.predict([data])
+    def predict1(self, data):
+        prediction = self.model1.predict([data])
         return prediction
 
-    def score(self, xdata, ydata):
-        score = self.model.score(xdata, ydata)
+    def predict2(self, data):
+        prediction = self.model2.predict([data])
+        return prediction
+
+    def score1(self, xdata, ydata):
+        score = self.model1.score(xdata, ydata)
         return score
+
+    def score2(self, xdata, ydata):
+        score2 = self.model2.score(xdata, ydata)
+        return score2
 
     def savemodel(self, filename):
         pickle.dump(self, open(filename, 'wb'))
@@ -351,13 +381,15 @@ data = Sensors(gyroScaleFactor, accScaleFactor, VCC, Resistor, tau)
 data.calibrateGyro(q, numCalibrationPoints)
 
 
-model = Model()
-model.get_training_data_regression(q, data, 200, 3, 1)
-model.trainSVR()
-model.savemodel('8x3x2500-Pi')
+# model = Model()
+# model.get_training_data_regression(q, data, 200, 3, 1)
+# model.trainSVR()
+# model.savemodel('8x3x2500-Pi')
 
-# model = pickle.load(open('8x3x2500-Pi', 'rb'))
-# print(model.score(model.trainingxdata, model.trainingydata))
+model = pickle.load(open('8x3x2500-Pi', 'rb'))
+print(model.score1(model.trainingxdata1, model.trainingydata1))
+print(model.score2(model.trainingxdata2, model.trainingydata2))
+
 # plt.scatter(model.trainingxdata, model.trainingydata)
 # plt.scatter(model.trainingxdata[:, 1], model.model.predict(model.trainingxdata))
 # plt.show()
@@ -382,7 +414,7 @@ model.savemodel('8x3x2500-Pi')
 # print(model.score(model.testingxdata, model.testingydata))
 
 # T = int(input("Enter how many seconds to run real time control: "))
-T = 30
+T = 60
 startTime = time.time()
 prevtime = 0
 pyprevtime = 0
@@ -408,7 +440,7 @@ pygame.display.set_caption('Show Text')
 # 1st parameter is the font file
 # which is present in pygame.
 # 2nd parameter is size of the font
-font = pygame.font.Font('freesansbold.ttf', 500)
+font = pygame.font.Font('freesansbold.ttf', 100)
 
 # create a text suface object,
 # on which text is drawn on it.
@@ -427,20 +459,25 @@ while time.time() < startTime + T:
 
     data.getData(q)
     a = [int(x) for x in data.force]
-    pred = model.predict(a)
-    print(pred, " ", q.qsize(), " ", s.in_waiting, " ", (time.time()-prevtime))
+    pred1 = model.predict1(a)
+    pred2 = model.predict2(a)
+    print(round(pred1[0], 1), " ", round(pred2[0], 1), " ", q.qsize(), " ", s.in_waiting, " ", (time.time()-prevtime))
     prevtime = time.time()
 
-    for i in range(0, len(predvec)-1):
-        predvec[i] = predvec[i+1]
-    predvec[-1] = pred[0]
+    # for i in range(0, len(predvec)-1):
+    #     predvec[i] = predvec[i+1]
+    # predvec[-1] = pred[0]
 
     if prevtime - pyprevtime > .05:
-        text = font.render(str(round(stats.mode(predvec)[0][0], 1)), True, white, blue)
+        text = font.render(str(round(stats.mode(pred1)[0][0], 1)), True, white, blue)
         textRect = text.get_rect()
-        textRect.center = (X // 2, Y // 2)
+        textRect.center = (X // 2 + pred1[0]*200, Y // 2 - pred2[0]*200)
         display_surface.fill(white)
         display_surface.blit(text, textRect)
+        text2 = font.render(str(round(stats.mode(pred2)[0][0], 1)), True, white, blue)
+        textRect2 = text.get_rect()
+        textRect2.center = (X // 2 + pred1[0]*200, Y // 2 - pred2[0]*200 + 100)
+        display_surface.blit(text2, textRect2)
         pygame.display.update()
         pyprevtime = prevtime
 

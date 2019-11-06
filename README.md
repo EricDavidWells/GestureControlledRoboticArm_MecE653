@@ -3,3 +3,9 @@ Using the gesture controlled robotic arm developed at (HACKED2019)[https://githu
 
 ## Photo
 ![](https://github.com/MarkSherstan/HACKED2019/blob/master/data/demoImage.png)
+
+## Command Line for PI
+* ssh pi@raspberrypi.local
+* sudo rfcomm bind dev/rfcomm0 98:D3:71:FD:61:63 1
+* password: not raspberry
+* sudo shutdown -h now

@@ -5,6 +5,11 @@ Servo elbow;
 Servo wrist;
 Servo hand;
 
+// Servo 1 range: // 500-2300, 500 right
+// Servo 2 range: //1000-2000, 
+// Servo 3 range: //500-1200, 1200 extended
+// Servo 4 range: // 800-1800, closed
+
 int shoulder_pos = 1500;
 int elbow_pos = 1500;
 int wrist_pos = 1500;
@@ -50,8 +55,8 @@ void loop() {
     }
   }
 
-shoulder.writeMicroseconds(shoulder_pos);
-elbow.writeMicroseconds(elbow_pos);
+shoulder.writeMicroseconds(shoulder_pos); 
+elbow.writeMicroseconds(elbow_pos); 
 wrist.writeMicroseconds(wrist_pos);
 hand.writeMicroseconds(hand_pos);
 

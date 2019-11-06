@@ -92,7 +92,9 @@ def buterLowpass(t,signal):
     plt.show()
 
 
-
+def running_mean(x, N):
+    cumsum = np.cumsum(np.insert(x, 0, 0))
+    return (cumsum[N:] - cumsum[:-N]) / float(N)
 
 
 datafilename = "8x3x2500-V1"
@@ -100,14 +102,14 @@ os.chdir("..")
 os.chdir("..")
 datafilepath = os.path.abspath(os.curdir) + "\\data\\" + datafilename
 print(datafilepath)
-# pickle.load(open(datafilepath, 'rb'))
-model = pickle.load(open(datafilepath, 'rb'))
-# model.plot_pca()
 
-model.data_split(0.8)
-model.trainSVM()
+# # RIP model comparison
+# model = pickle.load(open(datafilepath, 'rb'))
+# # model.plot_pca()
+# model.data_split(0.8)
+# model.trainSVM()
+# print("model accuracy: ", model.score(model.testingxdata, model.testingydata))
 
-print("model accuracy: ", model.score(model.testingxdata, model.testingydata))
 # Read data from csv and make a data frame
 # df = pd.read_csv('data.csv')
 # t = df.iloc[:, 0].tolist()
