@@ -1,7 +1,8 @@
 from threading import Thread
-from statistics import mode
+from scipy.stats import mode
 from sklearn import svm
-from scipy import stats
+from sklearn.decomposition import PCA
+from mpl_toolkits import mplot3d
 import pandas as pd
 import numpy as np
 import serial
@@ -10,12 +11,19 @@ import time
 import queue
 import math
 import pickle
-import random
+from matplotlib import pyplot as plt
+import platform
 
-try:
-    import RPi.GPIO as GPIO
-except:
+if platform.system() == "Windows":
+    COMPORT = "COM11"
     import cv2
+elif platform.system() == "Darwin":
+    COMPORT = "/dev/cu/MECE653-DevB"
+    import cv2
+else:
+    comport = "/dev/rfcomm0"
+    import RPi.GPIO as GPIO
+
 
 class Model:
     def __init__(self, model=None):
@@ -262,6 +270,7 @@ class Sensors:
 
         df.to_csv('data.csv', index=None, header=True)
 
+
 class robotArm:
     def __init__(self):
         self.joint1Range = [500,2300]
@@ -405,7 +414,7 @@ class Demo:
             predvec[-1] = pred[0]
 
             # Place the results onto the screen
-            cv2.putText(color, "Current Prediction: %s" % int(stats.mode(predvec)[0][0]),
+            cv2.putText(color, "Current Prediction: %s" % int(mode(predvec)[0][0]),
                                 (175, int(self.height/2)),
                                 self.font,
                                 self.fontScale,
@@ -421,9 +430,10 @@ class Demo:
             cv2.imshow("Number Demo", color)
 
         # Close the connections
+        print("check")
         cv2.destroyAllWindows()
+        print("check2")
         s.close()
-        q.join()
         print("End")
 
     def controlDemo(self, s, q, data, model, T):
@@ -449,8 +459,8 @@ class Demo:
             predvec[-1] = pred[0]
 
             # Update the arm position and print the result
-            bot.updateState(stats.mode(predvec)[0][0])
-            print(stats.mode(predvec)[0][0])
+            bot.updateState(mode(predvec)[0][0])
+            print(mode(predvec)[0][0])
 
         # Close the connections
         bot.endControl()
@@ -466,6 +476,7 @@ class SerialComs:
 
     def run_thread(self, q):
         self.t = Thread(target=self.get_serial_data, args=(q,))
+        self.t.daemon = True
         self.t.start()
 
     def get_serial_data(self, q):
@@ -497,13 +508,14 @@ class SerialComs:
                 print("error")
 
     def close(self):
-        self.t.join()
-        self.s.close()
-
+        print("thread closed")
+        self.port.close()
+        print("serial port closed")
 
 def main():
     # Connection and threading
-    s = SerialComs('COM11')
+
+    s = SerialComs(COMPORT)
     time.sleep(1)
     print("Connected")
     q = queue.Queue(maxsize=10)
@@ -519,22 +531,26 @@ def main():
     Resistor = 5100.0
     tau = 0.98
 
+    # Demo class
+    d = Demo()
+
     # Get data from sensors
     data = Sensors(gyroScaleFactor, accScaleFactor, VCC, Resistor, tau)
 
     # Train classifier
     model = Model()
-    model.get_training_data(q, data, 300, 4, 1)
+    model.get_training_data(q, data, 300, 2, 1)
     model.trainSVM()
 
-    # Demo class
-    d = Demo()
+    if platform.system() == "Windows" or platform.system() == "Darwin":
+        model.plot_pca()
+        T = int(input('Input time for control: '))
+        d.numberDemo(s, q, data, model, T)
+    else:
+        T = int(input('Input time for control: '))
+        d.controlDemo(s, q, data, model, T)
 
-    # Run some real time example
-    T = int(input('Input time for control: '))
-    d.numberDemo(s, q, data, model, T)
-    d.controlDemo(s, q, data, model, T)
 
 # Main loop
 if __name__ == '__main__':
-	main()
+    main()
