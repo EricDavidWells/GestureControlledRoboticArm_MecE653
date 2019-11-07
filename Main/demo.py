@@ -1,16 +1,21 @@
+from threading import Thread
+from statistics import mode
+from sklearn import svm
+from scipy import stats
+import pandas as pd
+import numpy as np
 import serial
 import struct
 import time
-from threading import Thread
 import queue
 import math
-import numpy as np
-import pandas as pd
-from sklearn import svm
 import pickle
-import RPi.GPIO as GPIO
-from statistics import mode
-from scipy import stats
+import random
+
+try:
+    import RPi.GPIO as GPIO
+except:
+    import cv2
 
 class Model:
     def __init__(self, model=None):
@@ -257,7 +262,6 @@ class Sensors:
 
         df.to_csv('data.csv', index=None, header=True)
 
-
 class robotArm:
     def __init__(self):
         self.joint1Range = [500,2300]
@@ -269,6 +273,9 @@ class robotArm:
         self.joint2value = 1000
         self.joint3value = 500
         self.joint4value = 800
+
+    def constrain(val, min_val, max_val):
+        return min(max_val, max(min_val, val))
 
     def startControl(self):
         # Run `pinout` to see the numbers
@@ -302,19 +309,19 @@ class robotArm:
         if state == 3:
             # Fist
             self.joint4value += 20
-            self.joint4value = constrain(self.joint4value, self.joint4Range[0],
+            self.joint4value = self.constrain(self.joint4value, self.joint4Range[0],
             self.joint4Range[1])
             self.joint4.ChangeDutyCycle(self.joint4value*dutyCycleScale)
         elif state == 6:
             # Rest
             self.joint4value -= 20
-            self.joint4value = constrain(self.joint4value, self.joint4Range[0],
+            self.joint4value = self.constrain(self.joint4value, self.joint4Range[0],
             self.joint4Range[1])
             self.joint4.ChangeDutyCycle(self.joint4value*dutyCycleScale)
         elif state == 1:
             # Extension
             self.joint1value -= 20
-            self.joint1value = constrain(self.joint1value, self.joint1Range[0],
+            self.joint1value = self.constrain(self.joint1value, self.joint1Range[0],
             self.joint1Range[1])
             self.joint1.ChangeDutyCycle(self.joint1value*dutyCycleScale)
             # self.joint1.ChangeDutyCycle(self.joint1Range[0]*dutyCycleScale)
@@ -322,7 +329,7 @@ class robotArm:
             # Flexion
             # self.joint1.ChangeDutyCycle(self.joint1Range[1]*dutyCycleScale)
             self.joint1value += 20
-            self.joint1value = constrain(self.joint1value, self.joint1Range[0],
+            self.joint1value = self.constrain(self.joint1value, self.joint1Range[0],
             self.joint1Range[1])
             self.joint1.ChangeDutyCycle(self.joint1value*dutyCycleScale)
         elif state == 5:
@@ -332,7 +339,7 @@ class robotArm:
             # self.joint3.ChangeDutyCycle(self.joint3Range[1]*dutyCycleScale)
 
             self.joint3value += 5
-            self.joint3value = constrain(self.joint3value, self.joint3Range[0],
+            self.joint3value = self.constrain(self.joint3value, self.joint3Range[0],
             self.joint3Range[1])
             self.joint3.ChangeDutyCycle(self.joint3value*dutyCycleScale)
         elif state == 4:
@@ -341,7 +348,7 @@ class robotArm:
             # self.joint3.ChangeDutyCycle(self.joint3Range[0]*dutyCycleScale)
 
             self.joint3value -= 5
-            self.joint3value = constrain(self.joint3value, self.joint3Range[0],
+            self.joint3value = self.constrain(self.joint3value, self.joint3Range[0],
             self.joint3Range[1])
             self.joint3.ChangeDutyCycle(self.joint3value*dutyCycleScale)
         else:
@@ -357,6 +364,100 @@ class robotArm:
         # Clean up ports used
         GPIO.cleanup()
 
+class Demo:
+    def __init__(self):
+        self.font        = cv2.FONT_HERSHEY_SIMPLEX
+        self.fontScale   = 2.5
+        self.fontColor   = (255,255,255)
+        self.lineType    = 2
+
+        self.width = 1280
+        self.height = 720
+
+    def numberDemo(self, s, q, thread, T):
+        # Set background to black
+        color = np.zeros((self.height,self.width,3), np.uint8)
+
+        # Create smoothing prediction vector
+        predvec = np.zeros(5)
+
+        # Time stamps
+        startTime = time.time()
+        prevTime = time.time()
+
+        # Run for T secounds
+        while(time.time() < startTime + T):
+            # Set background to black
+            color = np.zeros((self.height,self.width,3), np.uint8)
+
+            # Get data and predict
+            data.getData(q)
+            pred = model.predict(data.force)
+
+            # Print whats happening in the serial port
+            print(pred, " ", q.qsize(), " ", s.in_waiting, " ", 1/(time.time()-prevTime))
+            prevTime = time.time()
+
+            # Smooth the prediction
+            for ii in range(0,len(predvec)-1):
+                predvec[ii] = predvec[ii+1]
+            predvec[-1] = pred[0]
+
+            # Place the results onto the screen
+            cv2.putText(color, "Current Prediction: %s"%stats.mode(predvec)[0][0],
+                                (100,int(self.height/2)),
+                                self.font,
+                                self.fontScale,
+                                self.fontColor,
+                                self.lineType)
+
+            # Keyboard Toggles
+            key = cv2.waitKey(1)
+            if key & 0xff == ord('q'):
+                break
+
+            # Display the resulting frame
+            cv2.imshow("Number Demo", color)
+
+        # Close the connections
+        cv2.destroyAllWindows()
+        s.close()
+        q.join()
+        thread.join()
+        print("End")
+
+    def controlDemo(self, s, q, thread, T):
+        # Start the robot arm
+        bot = robotArm()
+        bot.startControl()
+
+        # Windowing classifier
+        predvec = np.zeros(15)
+
+        # Have an initial time stamp
+        startTime = time.time()
+
+        # Run for set amount of time
+        while(time.time() < startTime + T):
+            # Get data and predict
+            data.getData(q)
+            pred = model.predict(data.force)
+
+            # Smooth the prediction
+            for ii in range(0,len(predvec)-1):
+                predvec[ii] = predvec[ii+1]
+            predvec[-1] = pred[0]
+
+            # Update the arm position and print the result
+            bot.updateState(stats.mode(predvec)[0][0])
+            print(stats.mode(predvec)[0][0])
+
+        # Close the connections
+        bot.endControl()
+        s.close()
+        q.join()
+        thread.join()
+        print("End")
 
 def get_serial_data(s):
     while True:
@@ -385,69 +486,41 @@ def get_serial_data(s):
         except:
             print()
 
+def main():
+    # Connection and threading
+    s = serial.Serial('/dev/rfcomm0', 115200, timeout=1)
+    time.sleep(1)
+    print("Connected")
+    q = queue.Queue(maxsize=10)
+    print("Queue start")
+    thread = Thread(target=get_serial_data, args=(s,))
+    thread.start()
+    print("Thread start")
 
-def constrain(val, min_val, max_val):
-    return min(max_val, max(min_val, val))
+    # Set up sensors
+    numCalibrationPoints = 500
+    gyroScaleFactor = 131.0
+    accScaleFactor = 16384.0
+    VCC = 4.98
+    Resistor = 5100.0
+    tau = 0.98
 
+    # Get data from sensors
+    data = Sensors(gyroScaleFactor, accScaleFactor, VCC, Resistor, tau)
 
-# Connection and threading
-s = serial.Serial('/dev/rfcomm0', 115200, timeout=1)
-time.sleep(1)
-print("Connected")
-q = queue.Queue(maxsize=10)
-print("Queue start")
-thread = Thread(target=get_serial_data, args=(s,))
-thread.start()
-print("Thread start")
+    # Train classifier
+    model = Model()
+    model.get_training_data(q, data, 300, 7, 1)
+    model.trainSVM()
 
-# Set up sensors
-numCalibrationPoints = 500
-gyroScaleFactor = 131.0
-accScaleFactor = 16384.0
-VCC = 4.98
-Resistor = 5100.0
-tau = 0.98
+    # Demo class
+    d = Demo()
 
-# Create data from sensors
-data = Sensors(gyroScaleFactor, accScaleFactor, VCC, Resistor, tau)
+    # Run some real time example
+    T = int(input('Input time for control: '))
+    d.numberDemo(s, q, thread, T)
+    d.controlDemo(s, q, thread, T)
 
-# Train classifier
-model = Model()
-model.get_training_data(q, data, 300, 7, 1)
-model.trainSVM()
-
-# Initiate robot arm
-bot = robotArm()
-bot.startControl()
-
-# Get user and start simulation
-T = int(input("Enter how many seconds to run real time control: "))
-startTime = time.time()
-
-# Windowing classifier
-predvec = np.zeros(15)
-
-# Run for set amount of time
-while(time.time() < startTime + T):
-    data.getData(q)
-    pred = model.predict(data.force)
-
-    for i in range(0,len(predvec)-1):
-        predvec[i] = predvec[i+1]
-    predvec[-1] = pred[0]
-
-    bot.updateState(stats.mode(predvec)[0][0])
-    print(stats.mode(predvec)[0][0])
-    # try:
-    #     bot.updateState(mode(predvec))
-    #     print(pred[0], " ", mode(predvec))
-    # except:
-    #     bot.updateState(pred)
-    #     print(pred[0])
-
-# Close the connections
-bot.endControl()
-s.close()
-q.join()
-thread.join()
-print("End")
+# Main loop
+if __name__ == '__main__':
+	main()
