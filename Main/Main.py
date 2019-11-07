@@ -1,8 +1,6 @@
-from threading import Thread
 from scipy.stats import mode
+from threading import Thread
 from sklearn import svm
-from sklearn.decomposition import PCA
-from mpl_toolkits import mplot3d
 import pandas as pd
 import numpy as np
 import serial
@@ -11,15 +9,20 @@ import time
 import queue
 import math
 import pickle
-from matplotlib import pyplot as plt
 import platform
 
 if platform.system() == "Windows":
     COMPORT = "COM11"
     import cv2
+    from sklearn.decomposition import PCA
+    from matplotlib import pyplot as plt
+    from mpl_toolkits import mplot3d
 elif platform.system() == "Darwin":
     COMPORT = "/dev/cu/MECE653-DevB"
     import cv2
+    from sklearn.decomposition import PCA
+    from matplotlib import pyplot as plt
+    from mpl_toolkits import mplot3d
 else:
     comport = "/dev/rfcomm0"
     import RPi.GPIO as GPIO
@@ -104,6 +107,7 @@ class Model:
 
         self.testingxdata = datashuff[cutoff::, 0:-1]
         self.testingydata = datashuff[cutoff::, -1]
+
 
 class Sensors:
     def __init__(self, gyroScaleFactor, accScaleFactor, VCC, Resistor, tau):
@@ -511,6 +515,7 @@ class SerialComs:
         print("thread closed")
         self.port.close()
         print("serial port closed")
+
 
 def main():
     # Connection and threading
