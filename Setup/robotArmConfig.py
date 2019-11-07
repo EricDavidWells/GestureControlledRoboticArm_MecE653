@@ -1,5 +1,6 @@
 import RPi.GPIO as GPIO
 
+
 class robotArm:
     def __init__(self):
         self.joint1Range = [500,2300]
