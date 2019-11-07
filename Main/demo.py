@@ -364,6 +364,7 @@ class robotArm:
         # Clean up ports used
         GPIO.cleanup()
 
+
 class Demo:
     def __init__(self):
         self.font        = cv2.FONT_HERSHEY_SIMPLEX
@@ -374,12 +375,12 @@ class Demo:
         self.width = 1280
         self.height = 720
 
-    def numberDemo(self, s, q, thread, T):
+    def numberDemo(self, s, q, data, model, T):
         # Set background to black
         color = np.zeros((self.height,self.width,3), np.uint8)
 
         # Create smoothing prediction vector
-        predvec = np.zeros(5)
+        predvec = np.zeros(20)
 
         # Time stamps
         startTime = time.time()
@@ -395,7 +396,7 @@ class Demo:
             pred = model.predict(data.force)
 
             # Print whats happening in the serial port
-            print(pred, " ", q.qsize(), " ", s.in_waiting, " ", 1/(time.time()-prevTime))
+            print(pred, " ", q.qsize(), " ", s.port.in_waiting, " ", 1/(time.time()-prevTime))
             prevTime = time.time()
 
             # Smooth the prediction
@@ -404,8 +405,8 @@ class Demo:
             predvec[-1] = pred[0]
 
             # Place the results onto the screen
-            cv2.putText(color, "Current Prediction: %s"%stats.mode(predvec)[0][0],
-                                (100,int(self.height/2)),
+            cv2.putText(color, "Current Prediction: %s" % int(stats.mode(predvec)[0][0]),
+                                (175, int(self.height/2)),
                                 self.font,
                                 self.fontScale,
                                 self.fontColor,
@@ -423,10 +424,9 @@ class Demo:
         cv2.destroyAllWindows()
         s.close()
         q.join()
-        thread.join()
         print("End")
 
-    def controlDemo(self, s, q, thread, T):
+    def controlDemo(self, s, q, data, model, T):
         # Start the robot arm
         bot = robotArm()
         bot.startControl()
@@ -456,45 +456,59 @@ class Demo:
         bot.endControl()
         s.close()
         q.join()
-        thread.join()
         print("End")
 
-def get_serial_data(s):
-    while True:
-        try:
-            if (struct.unpack('B', s.read())[0] is 0x9F) and (
-                    struct.unpack('B', s.read())[0] is 0x6E):
-                data = s.read(34)
-                # print(data)
 
-                if (struct.unpack('B', s.read())[0] is 0xAE) and (
-                        struct.unpack('B', s.read())[0] is 0x72):
+class SerialComs:
+    def __init__(self, COM):
+        self.port = serial.Serial(COM, 115200, timeout=1)
+        self.t = False
 
-                    tempdata = []
-                    for i in range(17):
-                        # for i in range(len(self.rawData)):
-                        data2 = data[(i * 2):(2 + i * 2)]
-                        value, = struct.unpack('h', data2)
-                        tempdata.append(value)
+    def run_thread(self, q):
+        self.t = Thread(target=self.get_serial_data, args=(q,))
+        self.t.start()
 
-                    if not q.full():
-                        q.put(tempdata, block=False)
-                    else:
-                        q.get()
-                        q.task_done()
-                        q.put(tempdata, block=False)
-        except:
-            print()
+    def get_serial_data(self, q):
+        s = self.port
+        while True:
+            try:
+                if (struct.unpack('B', s.read())[0] is 0x9F) and (
+                        struct.unpack('B', s.read())[0] is 0x6E):
+                    data = s.read(34)
+                    # print(data)
+
+                    if (struct.unpack('B', s.read())[0] is 0xAE) and (
+                            struct.unpack('B', s.read())[0] is 0x72):
+
+                        tempdata = []
+                        for i in range(17):
+                            # for i in range(len(self.rawData)):
+                            data2 = data[(i * 2):(2 + i * 2)]
+                            value, = struct.unpack('h', data2)
+                            tempdata.append(value)
+
+                        if not q.full():
+                            q.put(tempdata)
+                        else:
+                            q.get()
+                            q.task_done()
+                            q.put(tempdata)
+            except:
+                print("error")
+
+    def close(self):
+        self.t.join()
+        self.s.close()
+
 
 def main():
     # Connection and threading
-    s = serial.Serial('/dev/rfcomm0', 115200, timeout=1)
+    s = SerialComs('COM11')
     time.sleep(1)
     print("Connected")
     q = queue.Queue(maxsize=10)
     print("Queue start")
-    thread = Thread(target=get_serial_data, args=(s,))
-    thread.start()
+    s.run_thread(q)
     print("Thread start")
 
     # Set up sensors
@@ -510,7 +524,7 @@ def main():
 
     # Train classifier
     model = Model()
-    model.get_training_data(q, data, 300, 7, 1)
+    model.get_training_data(q, data, 300, 4, 1)
     model.trainSVM()
 
     # Demo class
@@ -518,8 +532,8 @@ def main():
 
     # Run some real time example
     T = int(input('Input time for control: '))
-    d.numberDemo(s, q, thread, T)
-    d.controlDemo(s, q, thread, T)
+    d.numberDemo(s, q, data, model, T)
+    d.controlDemo(s, q, data, model, T)
 
 # Main loop
 if __name__ == '__main__':
