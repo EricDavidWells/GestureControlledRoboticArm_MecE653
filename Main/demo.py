@@ -10,7 +10,7 @@ from sklearn import svm
 import pickle
 import RPi.GPIO as GPIO
 from statistics import mode
-
+from scipy import stats
 
 class Model:
     def __init__(self, model=None):
@@ -26,7 +26,8 @@ class Model:
             print("Training iteration: {0}".format(i))
             for k in range(0, classnum):
                 print("Class number: {0} starting in 1 second..".format(k))
-                time.sleep(1)
+                time.sleep(2)
+                print("Getting data")
                 q.empty()
                 for j in range(0, n):
                     data.getData(q)
@@ -90,7 +91,6 @@ class Model:
 
         self.testingxdata = datashuff[cutoff::, 0:-1]
         self.testingydata = datashuff[cutoff::, -1]
-
 
 class Sensors:
     def __init__(self, gyroScaleFactor, accScaleFactor, VCC, Resistor, tau):
@@ -287,10 +287,12 @@ class robotArm:
         self.joint4 = GPIO.PWM(18, 50)
 
         # Write start position
-        self.joint1.start(7.5)
-        self.joint2.start(7.5)
-        self.joint3.start(7.5)
-        self.joint4.start(7.5)
+        dutyCycleScale = 100 / (20*1000)
+
+        self.joint1.start(self.joint1value * dutyCycleScale)
+        self.joint2.start(self.joint2value * dutyCycleScale)
+        self.joint3.start(self.joint3value * dutyCycleScale)
+        self.joint4.start(self.joint4value * dutyCycleScale)
 
     def updateState(self, state):
         # percentage / (20 ms * unit conversion)
@@ -303,7 +305,7 @@ class robotArm:
             self.joint4value = constrain(self.joint4value, self.joint4Range[0],
             self.joint4Range[1])
             self.joint4.ChangeDutyCycle(self.joint4value*dutyCycleScale)
-        elif state == 0:
+        elif state == 6:
             # Rest
             self.joint4value -= 20
             self.joint4value = constrain(self.joint4value, self.joint4Range[0],
@@ -329,7 +331,7 @@ class robotArm:
 
             # self.joint3.ChangeDutyCycle(self.joint3Range[1]*dutyCycleScale)
 
-            self.joint3value += 20
+            self.joint3value += 5
             self.joint3value = constrain(self.joint3value, self.joint3Range[0],
             self.joint3Range[1])
             self.joint3.ChangeDutyCycle(self.joint3value*dutyCycleScale)
@@ -338,12 +340,12 @@ class robotArm:
             # self.joint2.ChangeDutyCycle(self.joint2Range[1]*dutyCycleScale)
             # self.joint3.ChangeDutyCycle(self.joint3Range[0]*dutyCycleScale)
 
-            self.joint3value -= 20
+            self.joint3value -= 5
             self.joint3value = constrain(self.joint3value, self.joint3Range[0],
             self.joint3Range[1])
             self.joint3.ChangeDutyCycle(self.joint3value*dutyCycleScale)
         else:
-            print("No state found")
+            print(" ")
 
     def endControl(self):
         # Stop writing PWM signal to servos
@@ -380,20 +382,23 @@ def get_serial_data(s):
                         q.get()
                         q.task_done()
                         q.put(tempdata, block=False)
-
         except:
-            print("fck")
+            print()
 
 
 def constrain(val, min_val, max_val):
     return min(max_val, max(min_val, val))
 
 
+# Connection and threading
 s = serial.Serial('/dev/rfcomm0', 115200, timeout=1)
 time.sleep(1)
+print("Connected")
 q = queue.Queue(maxsize=10)
+print("Queue start")
 thread = Thread(target=get_serial_data, args=(s,))
 thread.start()
+print("Thread start")
 
 # Set up sensors
 numCalibrationPoints = 500
@@ -403,44 +408,46 @@ VCC = 4.98
 Resistor = 5100.0
 tau = 0.98
 
-
+# Create data from sensors
 data = Sensors(gyroScaleFactor, accScaleFactor, VCC, Resistor, tau)
-data.calibrateGyro(q, numCalibrationPoints)
-# data.logData(q, 10)
-#
+
+# Train classifier
 model = Model()
-model.get_training_data(q, data, 300, 6, 1)
-
+model.get_training_data(q, data, 300, 7, 1)
 model.trainSVM()
-model.savemodel('8x3x2500-Pi')
 
+# Initiate robot arm
 bot = robotArm()
 bot.startControl()
 
-
+# Get user and start simulation
 T = int(input("Enter how many seconds to run real time control: "))
 startTime = time.time()
 
-predvec = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-predvec += predvec
-predvec += predvec
+# Windowing classifier
+predvec = np.zeros(15)
+
+# Run for set amount of time
 while(time.time() < startTime + T):
     data.getData(q)
     pred = model.predict(data.force)
 
-    for i in range(len(predvec)-1, 0, -1):
-          predvec[i-1] = predvec[i]
+    for i in range(0,len(predvec)-1):
+        predvec[i] = predvec[i+1]
     predvec[-1] = pred[0]
 
-    print(pred[0])
+    bot.updateState(stats.mode(predvec)[0][0])
+    print(stats.mode(predvec)[0][0])
+    # try:
+    #     bot.updateState(mode(predvec))
+    #     print(pred[0], " ", mode(predvec))
+    # except:
+    #     bot.updateState(pred)
+    #     print(pred[0])
 
-    # print(pred, " ", q.qsize(), " ", s.in_waiting, " ", 1/(time.time()-prevtime))
-    try:
-        bot.updateState(mode(predvec))
-    except:
-        bot.updateState(pred)
-        print("lolololol")
-
-
+# Close the connections
 bot.endControl()
-print("good bye")
+s.close()
+q.join()
+thread.join()
+print("End")
