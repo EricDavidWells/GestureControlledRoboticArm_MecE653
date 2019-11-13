@@ -337,35 +337,24 @@ class robotArm:
             self.joint1value = self.constrain(self.joint1value, self.joint1Range[0],
             self.joint1Range[1])
             self.joint1.ChangeDutyCycle(self.joint1value*dutyCycleScale)
-            # self.joint1.ChangeDutyCycle(self.joint1Range[0]*dutyCycleScale)
         elif state == 2:
             # Flexion
-            # self.joint1.ChangeDutyCycle(self.joint1Range[1]*dutyCycleScale)
             self.joint1value += 20
             self.joint1value = self.constrain(self.joint1value, self.joint1Range[0],
             self.joint1Range[1])
             self.joint1.ChangeDutyCycle(self.joint1value*dutyCycleScale)
         elif state == 5:
             # Forward
-            # self.joint2.ChangeDutyCycle(self.joint2Range[0]*dutyCycleScale)
-
-            # self.joint3.ChangeDutyCycle(self.joint3Range[1]*dutyCycleScale)
-
             self.joint3value += 5
             self.joint3value = self.constrain(self.joint3value, self.joint3Range[0],
             self.joint3Range[1])
             self.joint3.ChangeDutyCycle(self.joint3value*dutyCycleScale)
         elif state == 4:
             # Back
-            # self.joint2.ChangeDutyCycle(self.joint2Range[1]*dutyCycleScale)
-            # self.joint3.ChangeDutyCycle(self.joint3Range[0]*dutyCycleScale)
-
             self.joint3value -= 5
             self.joint3value = self.constrain(self.joint3value, self.joint3Range[0],
             self.joint3Range[1])
             self.joint3.ChangeDutyCycle(self.joint3value*dutyCycleScale)
-        else:
-            print(" ")
 
     def endControl(self):
         # Stop writing PWM signal to servos
@@ -380,17 +369,18 @@ class robotArm:
 
 class Demo:
     def __init__(self):
-        self.fontScale   = 2.5
-        self.fontColor   = (255,255,255)
-        self.lineType    = 2
+        pass
+
+    def numberDemo(self, s, q, data, model, T):
+        self.font = cv2.FONT_HERSHEY_SIMPLEX
+        self.fontScale = 2.5
+        self.fontColor = (255, 255, 255)
+        self.lineType = 2
 
         self.width = 1280
         self.height = 720
 
-    def numberDemo(self, s, q, data, model, T):
-        self.font = cv2.FONT_HERSHEY_SIMPLEX
-
-	# Set background to black
+        # Set background to black
         color = np.zeros((self.height,self.width,3), np.uint8)
 
         # Create smoothing prediction vector
@@ -510,7 +500,8 @@ class SerialComs:
                             q.task_done()
                             q.put(tempdata)
             except:
-                print("error")
+                # print("error")
+                pass
 
     def close(self):
         print("thread closed")
@@ -544,16 +535,18 @@ def main():
     # Get data from sensors
     data = Sensors(gyroScaleFactor, accScaleFactor, VCC, Resistor, tau)
 
-    # Train classifier
-    model = Model()
-    model.get_training_data(q, data, 300, 7, 1)
-    model.trainSVM()
-
     if platform.system() == "Windows" or platform.system() == "Darwin":
+        # Train classifier
+        model = Model()
+        model.get_training_data(q, data, 300, 8, 1)
+        model.trainSVM()
         model.plot_pca()
         T = int(input('Input time for control: '))
         d.numberDemo(s, q, data, model, T)
     else:
+        model = Model()
+        model.get_training_data(q, data, 300, 7, 1)
+        model.trainSVM()
         T = int(input('Input time for control: '))
         d.controlDemo(s, q, data, model, T)
 
