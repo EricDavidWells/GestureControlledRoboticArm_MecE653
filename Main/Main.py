@@ -12,13 +12,13 @@ import pickle
 import platform
 
 if platform.system() == "Windows":
-    COMPORT = "COM11"
+    COMPORT = "COM16"
     import cv2
     from sklearn.decomposition import PCA
     from matplotlib import pyplot as plt
     from mpl_toolkits import mplot3d
 elif platform.system() == "Darwin":
-    COMPORT = "/dev/cu/MECE653-DevB"
+    COMPORT = "/dev/cu.MECE653-DevB"
     import cv2
     from sklearn.decomposition import PCA
     from matplotlib import pyplot as plt
@@ -400,7 +400,8 @@ class Demo:
             pred = model.predict(data.force)
 
             # Print whats happening in the serial port
-            print(pred, " ", q.qsize(), " ", s.port.in_waiting, " ", 1/(time.time()-prevTime))
+            # print(pred, " ", q.qsize(), " ", s.port.in_waiting, " ", 1/(time.time()-prevTime))
+            print(pred)
             prevTime = time.time()
 
             # Smooth the prediction
@@ -425,9 +426,7 @@ class Demo:
             cv2.imshow("Number Demo", color)
 
         # Close the connections
-        print("check")
         cv2.destroyAllWindows()
-        print("check2")
         s.close()
         print("End")
 
