@@ -24,7 +24,7 @@ elif platform.system() == "Darwin":
     from matplotlib import pyplot as plt
     from mpl_toolkits import mplot3d
 else:
-    comport = "/dev/rfcomm0"
+    COMPORT = "/dev/rfcomm0"
     import RPi.GPIO as GPIO
 
 
@@ -287,7 +287,7 @@ class robotArm:
         self.joint3value = 500
         self.joint4value = 800
 
-    def constrain(val, min_val, max_val):
+    def constrain(self, val, min_val, max_val):
         return min(max_val, max(min_val, val))
 
     def startControl(self):
@@ -380,7 +380,6 @@ class robotArm:
 
 class Demo:
     def __init__(self):
-        self.font        = cv2.FONT_HERSHEY_SIMPLEX
         self.fontScale   = 2.5
         self.fontColor   = (255,255,255)
         self.lineType    = 2
@@ -389,7 +388,9 @@ class Demo:
         self.height = 720
 
     def numberDemo(self, s, q, data, model, T):
-        # Set background to black
+        self.font = cv2.FONT_HERSHEY_SIMPLEX
+
+	# Set background to black
         color = np.zeros((self.height,self.width,3), np.uint8)
 
         # Create smoothing prediction vector
@@ -446,7 +447,7 @@ class Demo:
         bot.startControl()
 
         # Windowing classifier
-        predvec = np.zeros(15)
+        predvec = np.zeros(20)
 
         # Have an initial time stamp
         startTime = time.time()
@@ -515,6 +516,7 @@ class SerialComs:
         print("thread closed")
         self.port.close()
         print("serial port closed")
+        exit()
 
 
 def main():
@@ -544,7 +546,7 @@ def main():
 
     # Train classifier
     model = Model()
-    model.get_training_data(q, data, 300, 2, 1)
+    model.get_training_data(q, data, 300, 7, 1)
     model.trainSVM()
 
     if platform.system() == "Windows" or platform.system() == "Darwin":
