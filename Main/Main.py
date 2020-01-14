@@ -10,6 +10,8 @@ import queue
 import math
 import pickle
 import platform
+import matplotlib.animation as animation
+
 
 if platform.system() == "Windows":
     COMPORT = "COM16"
@@ -44,6 +46,7 @@ class Model:
                 print("Class number: {0} starting in 1 second..".format(k))
                 time.sleep(2)
                 print("Getting data")
+                # input("press enter")
                 q.empty()
                 for j in range(0, n):
                     data.getData(q)
@@ -274,6 +277,70 @@ class Sensors:
 
         df.to_csv('data.csv', index=None, header=True)
 
+    def visualize(self, q, buf, T):
+
+        global visualizedatax, visualizedatay, lines, timer
+
+        fig = plt.figure()
+
+        ax1 = fig.add_subplot(1, 1, 1)
+        ax1.set_ylim([0, 500])
+        ax1.set_xlim([0, buf])
+        lines = []
+        for i in range(0, 12):
+            line, = (ax1.plot([], [], lw=1))
+            lines.append(line)
+
+        visualizedatax = np.arange(0, buf, 1)
+        visualizedatay = np.zeros([12, buf])
+
+        timer = time.perf_counter()
+
+        # Get current time
+        anim = animation.FuncAnimation(fig, animate, fargs=(self, q,), interval=1, blit=True)
+        plt.show()
+
+        while time.perf_counter() < timer + T:
+            pass
+
+
+def animate(_, data, q):
+    global visualizedatax, visualizedatay, timer
+    data.getData(q)
+    visualizedatay = np.roll(visualizedatay, -1)
+    forcedatatemp = np.array(data.force)
+    visualizedatay[:, -1] = forcedatatemp
+    # visualizedatax = np.roll(visualizedatax, -1)
+    # visualizedatax[-1::] = time.perf_counter() - timer
+
+    datax = visualizedatax
+    datay = visualizedatay
+    line1 = lines[0]
+    line2 = lines[1]
+    line3 = lines[2]
+    line4 = lines[3]
+    line5 = lines[4]
+    line6 = lines[5]
+    line7 = lines[6]
+    line8 = lines[7]
+    line9 = lines[8]
+    line10 = lines[9]
+    line11 = lines[10]
+
+    line1.set_data(datax, datay[0, :])
+    line2.set_data(datax, datay[1, :])
+    line3.set_data(datax, datay[2, :])
+    line4.set_data(datax, datay[3, :])
+    line5.set_data(datax, datay[4, :])
+    line6.set_data(datax, datay[5, :])
+    line7.set_data(datax, datay[6, :])
+    line8.set_data(datax, datay[7, :])
+    line9.set_data(datax, datay[8, :])
+    line10.set_data(datax, datay[9, :])
+    line11.set_data(datax, datay[10, :])
+
+    return line1, line2, line3, line4, line5, line6, line7, line8, line9, line10, line11
+
 
 class robotArm:
     def __init__(self):
@@ -405,7 +472,7 @@ class Demo:
             prevTime = time.time()
 
             # Smooth the prediction
-            for ii in range(0,len(predvec)-1):
+            for ii in range(0, len(predvec)-1):
                 predvec[ii] = predvec[ii+1]
             predvec[-1] = pred[0]
 
@@ -533,6 +600,8 @@ def main():
 
     # Get data from sensors
     data = Sensors(gyroScaleFactor, accScaleFactor, VCC, Resistor, tau)
+
+    # data.visualize(q, 500, 10)
 
     if platform.system() == "Windows" or platform.system() == "Darwin":
         # Train classifier
